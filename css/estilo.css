@@ -1,0 +1,1158 @@
+/* ==========================================================================
+   ETAPA 1. CONFIGURACIÓN GLOBAL Y VARIABLES
+   ========================================================================== */
+:root {
+  /* Colores principales actualizados según la imagen de referencia */
+  --primary-light: #a6c7c8;
+  --primary-color: #009688;
+  --primary-dark: #00675b;
+  --accent-color: #007667;
+  /* Fondo oscuro (usualmente para pies de página o paneles) */
+  --dark-bg: #1a252f;
+  /* Degradado horizontal modificado: el celeste/turquesa claro se extiende hasta el 75% */
+  --header-bg: linear-gradient(90deg, #bfe3e4 0%, #3ca7a0 75%, #00675b 100%);
+  /* Texto */
+  --text-dark: #212529;   /* Un gris muy oscuro, mejor que #333 */
+  --text-white: #ffffff;
+  /* Sombras */
+  --shadow-soft: 0 2px 6px rgba(0,0,0,0.06);
+  --shadow-hard: 0 5px 20px rgba(0,0,0,0.2); /* Ligeramente suavizada */
+
+  /* Variables de fuente editables para Alertas de Catastro y Planos */
+  --alerta-catastro-font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  --alerta-catastro-font-size: 12px;
+  --alerta-catastro-font-weight: 600;
+  --alerta-catastro-color: #ffffff;
+} 
+
+body {
+    margin: 0;
+    padding: 0;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background-color: #f2f4f4;
+    color: #333;
+}
+
+
+/* ==========================================================================
+   ETAPA 2. ENCABEZADO PRINCIPAL (BARRA SUPERIOR CON DEGRADADO)
+   ========================================================================== */
+header {
+    background: var(--header-bg);
+    border-bottom: 3px solid #00564d;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    box-shadow: var(--shadow-soft);
+    position: relative;
+}
+
+/* 2.1. Fila superior: Logotipo, título del geoportal y sesión de usuario */
+.header-top-row {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    align-items: center;
+    width: 100%;
+    gap: 15px;
+    padding: 10px 25px 10px 25px;
+    box-sizing: border-box;
+}
+
+/* 2.2. Agrupación izquierda: Logo y Títulos institucionales */
+.header-left-group {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    grid-column: 1;
+}
+
+.header-logo-title { 
+    display: flex; 
+    align-items: center; 
+    gap: 15px; 
+}
+
+.logo-titulo { 
+    height: 40px; 
+    width: auto; 
+    object-fit: contain; 
+    border-radius: 4px; 
+    background-color: white;
+    padding: 2px;
+}
+
+.header-text-group { 
+    display: flex; 
+    flex-direction: column; 
+}
+
+header h1 {
+    font-size: 16px;
+    margin: 0;
+    color: #000000;
+    font-weight: 800;
+    letter-spacing: 0.5px;
+    line-height: 1.1;
+}
+
+.header-subtitle {
+    font-size: 11px;
+    font-weight: 700;
+    color: #1a252f;
+    letter-spacing: 0.3px;
+    margin-top: 2px;
+    line-height: 1.1;
+}
+
+/* 2.3. Agrupación derecha: Botón de acceso y credenciales del administrador */
+.header-right-group {
+    grid-column: 2;
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+}
+
+.admin-access-dropdown {
+    position: relative;
+    display: inline-block;
+}
+
+.admin-access-btn {
+    background-color: #ffffff;
+    color: #1e293b;
+    border: 1px solid #cbd5e1;
+    padding: 4px 8px;
+    border-radius: 6px;
+    font-size: 10px;
+    font-weight: 700;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+    transition: background-color 0.2s, border-color 0.2s;
+}
+
+.admin-access-btn:hover {
+    background-color: #f1f5f9;
+    border-color: #94a3b8;
+}
+
+.access-text-container {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    line-height: 1.2;
+}
+
+.access-username {
+    font-size: 9px;
+    font-weight: 800;
+    color: #000000;
+    letter-spacing: 0.3px;
+    text-transform: uppercase;
+}
+
+/* 2.4. Franja inferior: Mensaje de bienvenida institucional al usuario */
+.sed-welcome-bar {
+    background-color: #004d40;
+    border-top: 1px solid #2d616d;
+    border-bottom: 1px solid #2d616d;
+    width: 100%;
+    padding: 10px 25px;
+    box-sizing: border-box;
+    display: flex;
+    align-items: center;
+}
+
+.sed-welcome-text {
+    font-size: 12px;
+    font-weight: 800;
+    color: #ffffff; 
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+    margin: 0;
+}
+
+
+/* ==========================================================================
+   ETAPA 3. MENÚ DESPLEGABLE DE INICIO DE SESIÓN (LOGIN DROPDOWN)
+   ========================================================================== */
+.login-dropdown {
+    position: absolute;
+    right: 0;
+    top: 55px;
+    background: #1e2229;
+    color: #fff;
+    width: 240px;
+    padding: 15px;
+    border-radius: 8px;
+    box-shadow: var(--shadow-hard);
+    border: 1px solid #333;
+    z-index: 3000;
+    font-family: sans-serif;
+    display: none;
+}
+
+.login-form-group { 
+    margin-bottom: 10px; 
+}
+
+.login-form-group input {
+    width: 100%;
+    padding: 6px 8px;
+    background: #2a2f38;
+    border: 1px solid #444;
+    border-radius: 4px;
+    color: white;
+    font-size: 13px;
+    box-sizing: border-box;
+    outline: none;
+}
+
+.login-form-group input:focus { 
+    border-color: var(--primary-color); 
+}
+
+.login-remember { 
+    display: flex; 
+    align-items: center; 
+    gap: 8px; 
+    font-size: 10px; 
+    margin-bottom: 12px; 
+    color: #ccc; 
+}
+
+.login-submit-btn {
+    width: 100%;
+    background: #0984e3;
+    color: white;
+    border: none;
+    padding: 8px;
+    border-radius: 4px;
+    font-weight: bold;
+    cursor: pointer;
+    font-size: 13px;
+    transition: background 0.2s;
+}
+
+.login-submit-btn:hover { 
+    background: #74b9ff; 
+}
+
+.login-theme-toggle {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 10px;
+    margin-top: 12px;
+    padding-top: 8px;
+    border-top: 1px solid #333;
+    color: #ccc;
+}
+
+
+/* ==========================================================================
+   ETAPA 4. CONTENEDOR PRINCIPAL: MAPA INTERACTIVO Y PANEL LATERAL
+   ========================================================================== */
+.main-container {
+    display: flex;
+    flex-direction: row-reverse; /* Invierte el orden para colocar el mapa a la izquierda y el panel a la derecha */
+    gap: 20px;
+    padding: 20px;
+    height: calc(100vh - 85px);
+    box-sizing: border-box;
+}
+
+/* 4.1. Contenedor y Visor del Mapa */
+#map-container {
+    flex: 2.3;
+    background: white;
+    border-radius: 10px;
+    overflow: hidden;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+    display: flex;
+    flex-direction: column;
+    position: relative;
+    border: 1px solid #e1e8ed;
+}
+
+#map { 
+    width: 100%; 
+    height: 100%; 
+    min-height: 500px; 
+    position: relative; 
+    z-index: 1; 
+    cursor: grab; /* Mano abierta por defecto */
+}
+
+#map:active {
+    cursor: grabbing; /* Mano cerrada al hacer clic y arrastrar */
+}
+
+/* 4.2. Panel Lateral Derecha */
+.sidebar-panel {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+    overflow-y: auto;
+    max-height: calc(100vh - 120px);
+    padding-right: 5px;
+}
+
+
+/* ==========================================================================
+   ETAPA 5. MÓDULO DE GESTIÓN CATASTRAL (CONSULTA DE PREDIOS Y FINCAS)
+   ========================================================================== */
+.card-module-didactic {
+    background: #007667; /* Verde oscuro del fondo del módulo */
+    color: #fff;
+    border-radius: 16px;
+    padding: 14px 12px;
+    box-shadow: 0 6px 15px rgba(0, 118, 103, 0.25);
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.card-module-didactic h3 {
+    margin: 0;
+    font-size: 15px;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+    padding-bottom: 8px;
+}
+
+/* Fila para poner la descripción y el botón en paralelo */
+.didactic-description-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 10px;
+}
+
+.card-description { 
+    margin: 0; 
+    font-size: 13px; 
+    line-height: 1.3; 
+    opacity: 0.95; 
+    font-weight: 500;
+    flex: 1;
+}
+
+/* Estilo idéntico a la referencia para el botón LIMPIAR FILTRO */
+.btn-limpiar-filtro {
+    background-color: #c8e6c9;
+    color: #1b5e20;
+    border: none;
+    padding: 6px 10px;
+    border-radius: 20px;
+    font-size: 10px;
+    font-weight: 800;
+    letter-spacing: 0.3px;
+    text-transform: uppercase;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    white-space: nowrap;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12);
+    transition: background-color 0.2s ease, transform 0.1s ease;
+    flex-shrink: 0;
+}
+
+.btn-limpiar-filtro:hover {
+    background-color: #a5d6a7;
+    transform: translateY(-1px);
+}
+
+.btn-limpiar-filtro:active {
+    transform: translateY(0);
+}
+
+.icon-filter-clear {
+    width: 13px;
+    height: 13px;
+    stroke: #1b5e20;
+}
+
+.didactic-fields-container { 
+    display: flex; 
+    flex-direction: column; 
+    gap: 8px; 
+}
+
+.didactic-card {
+    background-color: #ffffff;
+    border-radius: 12px;
+    padding: 6px 12px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.08);
+    position: relative;
+    z-index: 1;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.didactic-card:hover {
+    background-color: #fafbfc;
+}
+
+.icon-circle {
+    width: 34px;
+    height: 34px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 16px;
+    flex-shrink: 0;
+}
+
+.field-content { 
+    display: flex; 
+    flex-direction: column; 
+    width: 100%; 
+    position: relative; 
+    pointer-events: auto;
+}
+
+.field-content label { 
+    font-size: 9px; 
+    font-weight: 800; 
+    color: #2d3436; 
+    letter-spacing: 0.5px; 
+}
+
+.field-content input {
+    border: none;
+    background: transparent;
+    font-size: 13px;
+    color: #212529;
+    outline: none;
+    padding: 1px 0;
+    width: 100%;
+}
+
+.field-content input::placeholder,
+.search-box input::placeholder { 
+    color: #6c757d; 
+    font-style: italic; 
+    font-size: 13px; 
+    font-weight: 600;
+}
+
+/* 5.1. Menú Autocompletado / Sugerencias Catastrales */
+.sugerencias-dropdown {
+    position: absolute;
+    top: calc(100% + 4px);
+    left: 0;
+    right: 0;
+    background: white;
+    color: #333;
+    border: 1px solid #ced4da;
+    border-radius: 6px;
+    z-index: 100;
+    max-height: 160px;
+    overflow-y: auto;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    display: none;
+}
+
+.sugerencias-dropdown div { 
+    padding: 8px 10px; 
+    cursor: pointer; 
+    font-size: 12px; 
+    border-bottom: 1px solid #f1f2f6; 
+}
+
+.sugerencias-dropdown div:hover { 
+    background-color: #e6fcf5; 
+    color: var(--primary-color); 
+    font-weight: 600; 
+}
+
+.btn-consultar-didactic {
+    background-color: var(--dark-bg);
+    color: white;
+    border: none;
+    border-radius: 8px;
+    padding: 10px;
+    font-size: 12px;
+    font-weight: bold;
+    cursor: pointer;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    transition: background-color 0.2s;
+    margin-top: 4px;
+}
+
+.btn-consultar-didactic:hover { 
+    background-color: #000000; 
+}
+
+/* 5.2. Alerta de Mensajes Catastrales y Planos */
+#alertaCatastro,
+#alertaPlano {
+    font-family: var(--alerta-catastro-font-family);
+    font-size: 14px;
+    font-weight: var(--alerta-catastro-font-weight);
+    color: var(--alerta-catastro-color);
+    padding: 6px 10px;
+    border-radius: 6px;
+    text-align: center;
+    line-height: 1.3;
+    display: none;
+    margin-top: 8px;
+}
+
+
+/* ==========================================================================
+   ETAPA 6. MÓDULO DE CONSULTA Y VISUALIZACIÓN DE PLANOS
+   ========================================================================== */
+.card-planos {
+    background: linear-gradient(135deg, var(--primary-dark), #005f5f);
+    color: white;
+    border-radius: 12px;
+    padding: 12px;
+    box-shadow: 0 6px 15px rgba(0, 139, 139, 0.25);
+    position: relative;
+    z-index: 1;
+}
+
+.card-planos h2 {
+    margin: 0 0 6px 0;
+    font-size: 13px;
+    font-weight: 800;
+    letter-spacing: 0.5px;
+    border-bottom: 1px solid rgba(255,255,255,0.3);
+    padding-bottom: 6px;
+}
+
+.instruccion { 
+    font-size: 13px; 
+    margin-bottom: 10px; 
+    opacity: 0.95; 
+    line-height: 1.4; 
+    font-weight: 500;
+}
+
+/* 6.1. Buscador y Lista de Sugerencias de Planos */
+.search-box { 
+    display: flex; 
+    gap: 8px; 
+    position: relative; 
+}
+
+.search-box input { 
+    flex: 1; 
+    padding: 6px 10px; 
+    border: none; 
+    border-radius: 6px; 
+    font-size: 13px; 
+    outline: none; 
+    background: #fff;
+}
+
+.search-box button {
+    padding: 6px 12px;
+    background-color: var(--dark-bg);
+    color: white;
+    border: none;
+    border-radius: 6px;
+    font-weight: bold;
+    font-size: 12px;
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+.search-box button:hover { 
+    background-color: #000000; 
+}
+
+.sugerencias-lista-planos {
+    position: absolute;
+    top: calc(100% + 4px);
+    left: 0;
+    right: 0;
+    background-color: white;
+    color: #333;
+    border: 1px solid #ced4da;
+    border-radius: 6px;
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    max-height: 150px;
+    overflow-y: auto;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    z-index: 200;
+    font-size: 12px;
+}
+
+.sugerencias-lista-planos li { 
+    padding: 8px 10px; 
+    cursor: pointer; 
+    border-bottom: 1px solid #f1f2f6; 
+}
+
+.sugerencias-lista-planos li:hover { 
+    background-color: #e6fcf5; 
+    color: var(--primary-dark); 
+    font-weight: bold; 
+}
+
+/* 6.2. Visor de Imagen del Plano y Marca de Agua */
+.viewer-plano {
+    background-color: #ffffff;
+    border: 2px dashed #cbd5e1;
+    border-radius: 8px;
+    width: 100%;
+    height: 230px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #64748b;
+    font-style: italic;
+    padding: 4px;
+    margin-top: 10px;
+    box-sizing: border-box;
+    overflow: hidden;
+    position: relative;
+}
+
+.watermark-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='350' height='350'><text x='20' y='120' fill='rgba(255, 0, 0, 0.2)' font-size='22' font-family='Arial, sans-serif' font-weight='bold' transform='rotate(-30 20 120)'>GEOPORTAL LJHR - USO RESTRINGIDO</text></svg>");
+    pointer-events: none;
+    z-index: 20;
+    display: none;
+}
+
+.placeholder-text { 
+    font-size: 11px; 
+}
+
+#planoImg {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    cursor: pointer;
+    background-color: #f8fafc;
+    border-radius: 6px;
+}
+
+
+/* ==========================================================================
+   ETAPA 7. WIDGETS Y PANELES FLOTANTES (COORDENADAS, STREET VIEW Y MARCADORES)
+   ========================================================================== */
+.coord-widget-container {
+    position: absolute;
+    bottom: 20px;
+    left: 20px;
+    z-index: 1000;
+    background: rgba(255, 255, 255, 0.95);
+    padding: 6px 10px;
+    border-radius: 8px;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.15);
+    border: 1px solid rgba(0,0,0,0.05);
+}
+
+.coord-inputs { 
+    display: flex; 
+    align-items: center; 
+    gap: 4px; 
+}
+
+.coord-label { 
+    font-size: 10px; 
+    font-weight: bold; 
+    color: #334155; 
+}
+
+.coord-inputs input, .coord-inputs select { 
+    padding: 4px 6px; 
+    border: 1px solid #cbd5e1; 
+    border-radius: 4px; 
+    font-size: 10px; 
+    outline: none; 
+    background: #fff;
+    color: #333;
+}
+
+.coord-inputs input:focus, .coord-inputs select:focus { 
+    border-color: var(--primary-color); 
+}
+
+.coord-inputs button {
+    background-color: var(--dark-bg);
+    color: white;
+    border: none;
+    border-radius: 4px;
+    padding: 4px 8px;
+    font-size: 10px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+.coord-inputs button:hover { 
+    background-color: var(--primary-color); 
+}
+
+#streetViewPanel {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    width: 280px;
+    height: 320px;
+    background: white;
+    z-index: 2000;
+    display: none;
+    flex-direction: column;
+    border: 1px solid #ccc;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+    border-radius: 6px;
+    overflow: hidden;
+}
+
+.street-view-header {
+    background: #2d3436;
+    color: white;
+    padding: 4px 8px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 11px;
+    font-weight: bold;
+}
+
+.street-view-close {
+    background: none;
+    border: none;
+    color: white;
+    font-weight: bold;
+    cursor: pointer;
+}
+
+#streetViewIframe { 
+    width: 100%; 
+    height: calc(100% - 26px); 
+    border: none; 
+}
+
+#placemarkPanel {
+    display: none;
+    position: absolute;
+    top: 70px;
+    right: 10px;
+    width: 240px;
+    background: white;
+    z-index: 2000;
+    border-radius: 8px;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+    font-family: Arial, sans-serif;
+    overflow: hidden;
+}
+
+
+/* ==========================================================================
+   ETAPA 8. ESTILOS DE VENTANAS EMERGENTES (POPUPS DE LEAFLET)
+   ========================================================================== */
+.leaflet-popup-content-wrapper {
+    max-width: 280px !important;
+    padding: 0;
+    border-radius: 12px;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+}
+
+.leaflet-popup-content {
+    margin: 12px 14px !important;
+    line-height: 1.4;
+    font-size: 12px;
+}
+
+
+/* ==========================================================================
+   ETAPA 9. CONTROLES DE NAVEGACIÓN Y ZOOM DEL MAPA
+   ========================================================================== */
+.leaflet-left .leaflet-control-zoom { 
+    left: auto !important; 
+    right: 10px !important; 
+    top: auto !important; 
+    bottom: 20px !important; 
+}
+
+
+/* ==========================================================================
+   ETAPA 10. VENTANA MODAL DE ALERTAS DE COORDENADAS
+   ========================================================================== */
+.modal-coord-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.45);
+    z-index: 4000;
+    display: none;
+    justify-content: center;
+    align-items: center;
+    backdrop-filter: blur(2px);
+}
+
+.modal-coord-box {
+    background: linear-gradient(135deg, #32465a, #202d38);
+    color: #ffffff;
+    width: 90%;
+    max-width: 360px;
+    padding: 20px 15px;
+    border-radius: 14px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+    text-align: center;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    animation: modalPopUp 0.25s ease-out;
+}
+
+.modal-coord-icon {
+    font-size: 32px;
+    margin-bottom: 6px;
+}
+
+.modal-coord-title {
+    font-size: 16px;
+    font-weight: 800;
+    letter-spacing: 0.8px;
+    margin-bottom: 10px;
+    color: #ffffff;
+}
+
+.modal-coord-text {
+    font-size: 12.5px;
+    line-height: 1.4;
+    color: #dcdde1;
+    margin-bottom: 18px;
+    padding: 0 5px;
+}
+
+.modal-coord-btn {
+    background: linear-gradient(135deg, #00cec9, #0984e3);
+    color: white;
+    border: none;
+    border-radius: 25px;
+    padding: 8px 30px;
+    font-size: 12px;
+    font-weight: bold;
+    cursor: pointer;
+    letter-spacing: 0.8px;
+    box-shadow: 0 4px 12px rgba(9, 132, 227, 0.4);
+    transition: all 0.2s ease;
+}
+
+.modal-coord-btn:hover {
+    filter: brightness(1.1);
+    transform: translateY(-1px);
+}
+
+@keyframes modalPopUp {
+    from { opacity: 0; transform: scale(0.9); }
+    to { opacity: 1; transform: scale(1); }
+}
+
+
+/* ==========================================================================
+   ETAPA 11. MODO OSCURO COMPLETO Y UNIFICADO (COLÓN DIGITAL)
+   ========================================================================== */
+
+/* 1. CONFIGURACIÓN GENERAL Y VARIABLES */
+body.dark-mode {
+    background-color: #001f2b !important;
+    color: #e8f6ff !important;
+
+    --primary-light: #7ddff5;
+    --primary-color: #00a9c7;
+    --primary-dark: #006b82;
+    --accent-color: #00d4e8;
+    --dark-bg: #002b3a;
+    --text-dark: #d9f5ff;
+    --text-white: #ffffff;
+}
+
+body.dark-mode h1, 
+body.dark-mode h2, 
+body.dark-mode h3, 
+body.dark-mode h4, 
+body.dark-mode label,
+body.dark-mode span,
+body.dark-mode p {
+    color: #e2f5fa;
+}
+
+
+/* 2. ENCABEZADO Y TEXTOS SUPERIORES */
+body.dark-mode header,
+body.dark-mode .header-container,
+body.dark-mode .top-bar {
+    background: linear-gradient(
+        90deg,
+        #002431 0%,
+        #003b4d 72%,
+        #004e62 100%
+    ) !important;
+    border-bottom: 3px solid #007d96 !important;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.45) !important;
+}
+
+body.dark-mode header h1,
+body.dark-mode .header-title,
+body.dark-mode .logo-text {
+    color: #ffffff !important;
+    text-shadow: 0 1px 3px rgba(0, 0, 0, 0.6);
+}
+
+body.dark-mode .header-subtitle,
+body.dark-mode p.header-subtitle {
+    color: #72d8e9 !important;
+}
+
+body.dark-mode .admin-access-btn {
+    background: #002633 !important;
+    color: #e8f6ff !important;
+    border: 1px solid #08758c !important;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.35) !important;
+}
+
+body.dark-mode .admin-access-btn:hover {
+    background: #003746 !important;
+    border-color: #00c4da !important;
+}
+
+body.dark-mode .access-username {
+    color: #ffffff !important;
+}
+
+body.dark-mode .sed-welcome-bar {
+    background: #003b4a !important;
+    border-top-color: #008ba3 !important;
+    border-bottom-color: #008ba3 !important;
+}
+
+body.dark-mode .sed-welcome-text {
+    color: #ffffff !important;
+}
+
+
+/* 3. MÓDULO DE GESTIÓN CATASTRAL
+   PALETA AJUSTADA A LA REFERENCIA
+   ========================================================================== */
+
+body.dark-mode .card-module-didactic {
+    background: linear-gradient(
+        160deg,
+        #004e5e 0%,
+        #003d4c 55%,
+        #002f3c 100%
+    ) !important;
+    color: #ffffff !important;
+    border: 1px solid #008da5 !important;
+    box-shadow: 0 6px 18px rgba(0, 117, 139, 0.35) !important;
+}
+
+body.dark-mode .card-module-didactic h3 {
+    color: #ffffff !important;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.28) !important;
+}
+
+body.dark-mode .card-module-didactic .card-description,
+body.dark-mode .card-module-didactic label {
+    color: #e8faff !important;
+}
+
+body.dark-mode .didactic-card {
+    background-color: #003044 !important;
+    color: #ffffff !important;
+    border: 1px solid #007d94 !important;
+    box-shadow: 0 2px 7px rgba(0, 0, 0, 0.35) !important;
+}
+
+body.dark-mode .didactic-card:hover {
+    background-color: #004052 !important;
+}
+
+body.dark-mode .field-content label {
+    color: #ffffff !important;
+}
+
+body.dark-mode .field-content input {
+    background-color: transparent !important; /* Se funde completamente con el fondo de la tarjeta */
+    color: #ffffff !important;
+    border: none !important; 
+    outline: none !important;
+    box-shadow: none !important;
+}
+
+body.dark-mode .field-content input::placeholder {
+    color: #78aeb9 !important;
+}
+
+body.dark-mode .btn-limpiar-filtro {
+    background-color: #006c7d !important;
+    color: #ffffff !important;
+    border: 1px solid #00aabd !important;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.25) !important;
+}
+
+body.dark-mode .btn-limpiar-filtro:hover {
+    background-color: #008da1 !important;
+}
+
+body.dark-mode .icon-filter-clear {
+    stroke: #ffffff !important;
+}
+
+body.dark-mode .btn-consultar-didactic {
+    background: linear-gradient(
+        90deg,
+        #008aa5 0%,
+        #00b4c9 100%
+    ) !important;
+    color: #ffffff !important;
+    border: 1px solid #00d4e8 !important;
+    box-shadow: 0 3px 8px rgba(0, 174, 200, 0.25) !important;
+}
+
+body.dark-mode .btn-consultar-didactic:hover {
+    background: linear-gradient(
+        90deg,
+        #00b4c9 0%,
+        #00d4e8 100%
+    ) !important;
+}
+
+
+/* 4. MÓDULO CONSULTA DE PLANOS Y OTROS PANELES LATERALES */
+body.dark-mode .card-planos {
+    background: linear-gradient(
+        135deg,
+        #004b60 0%,
+        #003b4d 100%
+    ) !important;
+    color: #ffffff !important;
+    border: 1px solid #0086a0 !important;
+    box-shadow: 0 6px 18px rgba(0, 95, 115, 0.35) !important;
+}
+
+body.dark-mode .card-planos h2,
+body.dark-mode .card-planos .instruccion {
+    color: #ffffff !important;
+}
+
+body.dark-mode .card-planos h2 {
+    border-bottom-color: rgba(255, 255, 255, 0.28) !important;
+}
+
+body.dark-mode .search-box input {
+    background: #002a3a !important;
+    color: #ffffff !important;
+}
+
+body.dark-mode .viewer-plano,
+body.dark-mode #planoImg {
+    background: #002635 !important;
+    border-color: #21778c !important;
+    color: #9ed2de !important;
+}
+
+body.dark-mode .sidebar-panel {
+    background: transparent !important;
+}
+
+
+/* 5. MAPA, WIDGETS Y CONTROLES LEAFLET */
+body.dark-mode #map-container {
+    background: #002431 !important;
+    border: 1px solid #007e96 !important;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.45) !important;
+}
+
+body.dark-mode .coord-widget-container {
+    background: rgba(0, 36, 49, 0.96) !important;
+    border: 1px solid #08758b !important;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.5) !important;
+}
+
+body.dark-mode .coord-label {
+    color: #bcecf5 !important;
+}
+
+body.dark-mode .coord-inputs input,
+body.dark-mode .coord-inputs select {
+    background: #073447 !important;
+    color: #e8f6ff !important;
+    border-color: #216b7e !important;
+}
+
+body.dark-mode .leaflet-control-layers,
+body.dark-mode .leaflet-control-zoom,
+body.dark-mode .leaflet-control-zoom a,
+body.dark-mode #streetViewPanel,
+body.dark-mode #placemarkPanel {
+    background: #002c3c !important;
+    color: #dff5ff !important;
+    border-color: #12657a !important;
+}
+
+body.dark-mode .leaflet-popup-content-wrapper,
+body.dark-mode .leaflet-popup-tip {
+    background: #002c3c !important;
+    color: #e8f6ff !important;
+}
+
+/* 6. SUGERENCIAS Y LISTAS DESPLEGABLES */
+body.dark-mode .sugerencias-dropdown,
+body.dark-mode .sugerencias-lista-planos {
+    background: #003143 !important;
+    color: #e8f6ff !important;
+    border-color: #007e96 !important;
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.5) !important;
+}
+
+body.dark-mode .sugerencias-dropdown div,
+body.dark-mode .sugerencias-lista-planos li {
+    color: #dcefff !important;
+    border-bottom-color: #155064 !important;
+}
+
+body.dark-mode .sugerencias-dropdown div:hover,
+body.dark-mode .sugerencias-lista-planos li:hover {
+    background: #005068 !important;
+    color: #62e4f4 !important;
+}
+
+
+/* 7. SCROLLBARS PERSONALIZADOS */
+body.dark-mode .sidebar-panel::-webkit-scrollbar {
+    width: 8px;
+}
+
+body.dark-mode .sidebar-panel::-webkit-scrollbar-track {
+    background: #00202c;
+}
+
+body.dark-mode .sidebar-panel::-webkit-scrollbar-thumb {
+    background: #08758b;
+    border-radius: 10px;
+}
+
+body.dark-mode .sidebar-panel::-webkit-scrollbar-thumb:hover {
+    background: #00c4da;
+}
