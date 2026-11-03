@@ -286,20 +286,36 @@ window.cerrarModalCoordenadas = function() {
 
 
 // ============================================================================
-// ETAPA 5: BARRAS INFERIORES, VISUALIZACIÓN EN TIEMPO REAL Y BÚSQUEDA
+// ETAPA 5: BARRAS INFERIORES, POPUP DINÁMICO Y BÚSQUEDA MANUAL
 // ============================================================================
 
 window.listaMarcadoresCoordenadas = [];
 
+// Función para generar el contenido del popup mostrando ÚNICAMENTE el formato seleccionado
 function generarPopupCoordenadasHtml(lat, lng) {
-    const utm = latLonToUTM(lat, lng, 17);
-    const dms = latLonToDMS(lat, lng);
+    const selectEl = document.getElementById('selectTipoCoord') || document.getElementById('formatoCoordenadas');
+    const formato = selectEl ? selectEl.value.toUpperCase() : 'DD';
+
+    let contenidoFormato = '';
+    let textoCopiar = '';
+
+    if (formato === 'DD') {
+        textoCopiar = `${lat.toFixed(6)}, ${lng.toFixed(6)}`;
+        contenidoFormato = `<b>Lat/Lon:</b> ${textoCopiar}`;
+    } else if (formato === 'UTM') {
+        const utm = latLonToUTM(lat, lng, 17);
+        textoCopiar = `${utm.easting} E, ${utm.northing} N`;
+        contenidoFormato = `<b>UTM:</b> ${textoCopiar} (Zona 17N)`;
+    } else if (formato === 'DMS' || formato === 'GMS') {
+        const dms = latLonToDMS(lat, lng);
+        textoCopiar = `${dms.latDMS} - ${dms.lngDMS}`;
+        contenidoFormato = `<b>GMS:</b> ${textoCopiar}`;
+    }
+
     return `
         <div style="font-family: sans-serif; font-size: 12px; min-width: 180px;">
-            <b>Lat/Lon:</b> ${lat.toFixed(6)}, ${lng.toFixed(6)}<br>
-            <b>UTM:</b> ${utm.easting} E, ${utm.northing} N (Zona 17N)<br>
-            <b>GMS:</b> ${dms.latDMS} - ${dms.lngDMS}<br>
-            <button onclick="navigator.clipboard.writeText('${lat.toFixed(6)}, ${lng.toFixed(6)}'); alert('Copiado');" style="margin-top:6px; width:100%; background:#0984e3; color:white; border:none; padding:4px; border-radius:3px; cursor:pointer;">📋 Copiar</button>
+            ${contenidoFormato}<br>
+            <button onclick="navigator.clipboard.writeText('${textoCopiar}'); alert('Copiado');" style="margin-top:6px; width:100%; background:#0984e3; color:white; border:none; padding:4px; border-radius:3px; cursor:pointer;">📋 Copiar</button>
             <div style="font-size:10px; font-style:italic; color:#555; margin-top:6px; border-top:1px solid #ddd; padding-top:4px;">
                 Nota: Coordenadas de carácter meramente informativo. No son válidas para trámites legales, jurídicos o de titulación en el Registro Público.
             </div>
@@ -351,16 +367,17 @@ const CoordsControl = L.Control.extend({
 });
 map.addControl(new CoordsControl());
 
-// 1. Cambio dinámico de formato y placeholders en la barra inferior
+// 1. Cambio dinámico de placeholders y etiquetas en la barra inferior (SIN actualizar con el cursor)
 window.cambiarFormatoCoordenadas = function() {
     const selectEl = document.getElementById('selectTipoCoord') || document.getElementById('formatoCoordenadas');
     if (!selectEl) return;
-    const formato = selectEl.value;
+    const formato = selectEl.value.toUpperCase();
     const inputLong = document.getElementById('inputLong');
     const inputLat = document.getElementById('inputLat');
     const labelX = document.getElementById('labelX');
     const labelY = document.getElementById('labelY');
 
+    // Limpiar campos al cambiar de formato para que el usuario ingrese nuevos datos manualmente
     if(inputLong) inputLong.value = '';
     if(inputLat) inputLat.value = '';
 
@@ -369,56 +386,20 @@ window.cambiarFormatoCoordenadas = function() {
         if(labelY) labelY.innerText = 'Lat:';
         if(inputLong) inputLong.placeholder = 'Ej. -79.90';
         if(inputLat) inputLat.placeholder = 'Ej. 9.36';
-    } else if (formato === 'DMS' || formato === 'dms') {
+    } else if (formato === 'DMS' || formato === 'GMS') {
         if(labelX) labelX.innerText = 'Lon (GMS):';
         if(labelY) labelY.innerText = 'Lat (GMS):';
         if(inputLong) inputLong.placeholder = 'Ej. 79° 54\' 10" O';
         if(inputLat) inputLat.placeholder = 'Ej. 9° 21\' 46" N';
-    } else if (formato === 'UTM' || formato === 'utm') {
-        if(labelX) labelX.innerText = 'Este (X):';
-        if(labelY) labelY.innerText = 'Norte (Y):';
-        if(inputLong) inputLong.placeholder = 'Ej. 620194';
-        if(inputLat) inputLat.placeholder = 'Ej. 1035070';
-    }
-};
-
-// 2. Visualización automática en tiempo real al mover el cursor sobre el mapa (si no se están editando los inputs)
-map.on('mousemove', function(e) {
-    const inputLong = document.getElementById('inputLong');
-    const inputLat = document.getElementById('inputLat');
-    
-    // Evitar sobreescribir si el usuario está escribiendo activamente en los campos
-    if (document.activeElement === inputLong || document.activeElement === inputLat) return;
-
-    const selectEl = document.getElementById('selectTipoCoord') || document.getElementById('formatoCoordenadas');
-    if (!selectEl) return;
-    const formato = selectEl.value.toUpperCase();
-
-    const lat = e.latlng.lat;
-    const lng = e.latlng.lng;
-
-    if (formato === 'DD') {
-        if(inputLong) inputLong.value = lng.toFixed(6);
-        if(inputLat) inputLat.value = lat.toFixed(6);
     } else if (formato === 'UTM') {
-        const utm = latLonToUTM(lat, lng, 17);
-        if(inputLong) inputLong.value = utm.easting;
-        if(inputLat) inputLat.value = utm.northing;
-    } else if (formato === 'DMS') {
-        const dms = latLonToDMS(lat, lng);
-        if(inputLong) inputLong.value = dms.lngDMS;
-        if(inputLat) inputLat.value = dms.latDMS;
-    }
-});
-
-// 3. Detección de tecla Enter en los inputs de coordenadas
-window.verificarEnterCoordenadas = function(event) {
-    if (event.key === 'Enter') {
-        window.irACoordenadasPersonalizadas();
+        if(labelX) labelX.innerText = 'Este:';
+        if(labelY) labelY.innerText = 'Norte:';
+        if(inputLong) inputLong.placeholder = 'Ej. 660000';
+        if(inputLat) inputLat.placeholder = 'Ej. 990000';
     }
 };
 
-// Adjuntar evento keydown a los inputs si ya están cargados
+// 2. Detección de tecla Enter en los inputs de coordenadas
 document.addEventListener("DOMContentLoaded", function() {
     ['inputLong', 'inputLat'].forEach(id => {
         const el = document.getElementById(id);
@@ -432,7 +413,7 @@ document.addEventListener("DOMContentLoaded", function() {
     });
 });
 
-// 4. Búsqueda y Validación estricta con Alerta Modal
+// 3. Función de búsqueda manual (al dar clic en "Ir" o presionar Enter) con validación estricta
 window.irACoordenadasPersonalizadas = function() {
     const selectEl = document.getElementById('selectTipoCoord') || document.getElementById('formatoCoordenadas');
     const formato = selectEl ? selectEl.value.toUpperCase() : 'DD';
@@ -444,7 +425,6 @@ window.irACoordenadasPersonalizadas = function() {
         return;
     }
 
-    // Validación y procesamiento por Formato
     if (formato === 'DD') {
         const lng = parseFloat(valX);
         const lat = parseFloat(valY);
@@ -458,7 +438,6 @@ window.irACoordenadasPersonalizadas = function() {
     } else if (formato === 'UTM') {
         const easting = parseFloat(valX);
         const northing = parseFloat(valY);
-        // Validación de rangos aproximados UTM Zona 17N (Panamá / Centroamérica)
         if (isNaN(easting) || isNaN(northing) || easting < 100000 || easting > 900000 || northing < 0 || northing > 10000000) {
             mostrarModalAlertaCoordenadas("Los valores ingresados no corresponden a coordenadas UTM válidas (Zona 17N).");
             return;
@@ -478,7 +457,7 @@ window.irACoordenadasPersonalizadas = function() {
             mostrarModalAlertaCoordenadas("Error al procesar las coordenadas UTM ingresadas.");
         }
 
-    } else if (formato === 'DMS') {
+    } else if (formato === 'DMS' || formato === 'GMS') {
         const parseDMS = (dmsStr) => {
             const clean = dmsStr.replace(/["']/g, ' ').replace(/[°]/g, ' ');
             const partes = clean.trim().split(/\s+/);
@@ -506,6 +485,23 @@ window.irACoordenadasPersonalizadas = function() {
         map.setView([lat, lng], 18);
         L.marker([lat, lng]).addTo(map).bindPopup(generarPopupCoordenadasHtml(lat, lng)).openPopup();
     }
+};
+
+// Función auxiliar para mostrar la alerta modal requerida
+function mostrarModalAlertaCoordenadas(mensajePersonalizado) {
+    const modal = document.getElementById('customModalCoord');
+    const msg = document.getElementById('customModalCoordMsg');
+    if (modal && msg) {
+        msg.innerHTML = `⚠️ <b>Verifique coordenadas:</b> ${mensajePersonalizado}`;
+        modal.style.display = 'flex';
+    } else {
+        alert("¡ALERTA DE COORDENADAS!\n⚠️ " + mensajePersonalizado);
+    }
+}
+
+window.cerrarModalCoordenadas = function() {
+    const modal = document.getElementById('customModalCoord');
+    if (modal) modal.style.display = 'none';
 };
 // ============================================================================
 // ETAPA 6: MODALES Y ALERTAS DEL SISTEMA
