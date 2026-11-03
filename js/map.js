@@ -291,6 +291,7 @@ window.cerrarModalCoordenadas = function() {
 
 window.listaMarcadoresCoordenadas = [];
 
+// Función para generar el contenido del popup según el formato seleccionado
 function generarPopupCoordenadasHtml(lat, lng) {
     const selectEl = document.getElementById('selectTipoCoord') || document.getElementById('formatoCoordenadas');
     const formato = selectEl ? selectEl.value.toUpperCase() : 'DD';
@@ -326,6 +327,7 @@ function generarPopupCoordenadasHtml(lat, lng) {
     `;
 }
 
+// Control del Pin de Coordenadas (Drag & Drop)
 const CoordsControl = L.Control.extend({
     options: { position: 'topleft' },
     onAdd: function(map) {
@@ -361,6 +363,12 @@ const CoordsControl = L.Control.extend({
             if (e.clientX >= rect.left && e.clientX <= rect.right && e.clientY >= rect.top && e.clientY <= rect.bottom) {
                 const finalLatLng = map.containerPointToLatLng([e.clientX - rect.left, e.clientY - rect.top]);
                 const marker = L.marker(finalLatLng).addTo(map);
+                
+                // Guardar coordenadas puras en el marcador y registrarlo globalmente
+                marker.lat = finalLatLng.lat;
+                marker.lng = finalLatLng.lng;
+                window.listaMarcadoresCoordenadas.push(marker);
+
                 marker.bindPopup(generarPopupCoordenadasHtml(finalLatLng.lat, finalLatLng.lng)).openPopup();
             }
         });
@@ -369,6 +377,7 @@ const CoordsControl = L.Control.extend({
 });
 map.addControl(new CoordsControl());
 
+// Cambio dinámico de formato: actualiza placeholders y refresca los popups abiertos automáticamente
 window.cambiarFormatoCoordenadas = function() {
     const selectEl = document.getElementById('selectTipoCoord') || document.getElementById('formatoCoordenadas');
     if (!selectEl) return;
@@ -397,6 +406,15 @@ window.cambiarFormatoCoordenadas = function() {
         if(inputLong) inputLong.placeholder = 'Ej. 660000';
         if(inputLat) inputLat.placeholder = 'Ej. 990000';
     }
+
+    // Actualizar dinámicamente todos los marcadores de coordenadas activos en el mapa
+    if (window.listaMarcadoresCoordenadas && window.listaMarcadoresCoordenadas.length > 0) {
+        window.listaMarcadoresCoordenadas.forEach(marker => {
+            if (marker && map.hasLayer(marker)) {
+                marker.setPopupContent(generarPopupCoordenadasHtml(marker.lat, marker.lng));
+            }
+        });
+    }
 };
 
 window.irACoordenadasPersonalizadas = function() {
@@ -410,16 +428,15 @@ window.irACoordenadasPersonalizadas = function() {
         return;
     }
 
+    let lat = 0, lng = 0;
+
     if (formato === 'DD') {
-        const lng = parseFloat(valX);
-        const lat = parseFloat(valY);
+        lng = parseFloat(valX);
+        lat = parseFloat(valY);
         if (isNaN(lng) || isNaN(lat) || lat < -90 || lat > 90 || lng < -180 || lng > 180) {
             mostrarModalAlertaCoordenadas("Los valores ingresados no corresponden a Grados Decimales válidos.");
             return;
         }
-        map.setView([lat, lng], 18);
-        L.marker([lat, lng]).addTo(map).bindPopup(generarPopupCoordenadasHtml(lat, lng)).openPopup();
-
     } else if (formato === 'UTM') {
         const easting = parseFloat(valX);
         const northing = parseFloat(valY);
@@ -431,17 +448,17 @@ window.irACoordenadasPersonalizadas = function() {
             if (typeof proj4 !== 'undefined') {
                 const utmProj = "+proj=utm +zone=17 +datum=WGS84 +units=m +no_defs";
                 const wgs84Proj = "+proj=longlat +datum=WGS84 +no_defs";
-                const [lng, lat] = proj4(utmProj, wgs84Proj, [easting, northing]);
-
-                map.setView([lat, lng], 18);
-                L.marker([lat, lng]).addTo(map).bindPopup(generarPopupCoordenadasHtml(lat, lng)).openPopup();
+                const [convLng, convLat] = proj4(utmProj, wgs84Proj, [easting, northing]);
+                lng = convLng;
+                lat = convLat;
             } else {
                 mostrarModalAlertaCoordenadas("Librería Proj4 no disponible para conversión UTM.");
+                return;
             }
         } catch (e) {
             mostrarModalAlertaCoordenadas("Error al procesar las coordenadas UTM ingresadas.");
+            return;
         }
-
     } else if (formato === 'DMS' || formato === 'GMS') {
         const parseDMS = (dmsStr) => {
             const clean = dmsStr.replace(/["']/g, ' ').replace(/[°]/g, ' ');
@@ -459,19 +476,25 @@ window.irACoordenadasPersonalizadas = function() {
             return parseFloat(dmsStr);
         };
 
-        const lng = parseDMS(valX);
-        const lat = parseDMS(valY);
+        lng = parseDMS(valX);
+        lat = parseDMS(valY);
 
         if (isNaN(lng) || isNaN(lat) || Math.abs(lat) > 90 || Math.abs(lng) > 180) {
             mostrarModalAlertaCoordenadas("El formato GMS ingresado es incorrecto o presenta inconsistencias.");
             return;
         }
-
-        map.setView([lat, lng], 18);
-        L.marker([lat, lng]).addTo(map).bindPopup(generarPopupCoordenadasHtml(lat, lng)).openPopup();
     }
-};
 
+    map.setView([lat, lng], 18);
+    const marker = L.marker([lat, lng]).addTo(map);
+    
+    // Registrar el marcador generado por búsqueda manual
+    marker.lat = lat;
+    marker.lng = lng;
+    window.listaMarcadoresCoordenadas.push(marker);
+
+    marker.bindPopup(generarPopupCoordenadasHtml(lat, lng)).openPopup();
+};
 
 // ============================================================================
 // ETAPA 6: MODALES Y ALERTAS DEL SISTEMA
