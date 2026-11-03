@@ -56,7 +56,7 @@ const layerControl = L.control.layers(baseMaps, overlayMaps).addTo(map);
 
 // Función para cargar el archivo FINCAS.json al iniciar la página
 function cargarDatosGeoJSON() {
-    fetch(RUTA_DATOS_JSON)
+    fetch(FINCAS.json)
         .then(response => {
             if (!response.ok) {
                 throw new Error('No se pudo cargar el archivo FINCAS.json');
