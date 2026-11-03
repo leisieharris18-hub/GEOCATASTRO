@@ -104,10 +104,6 @@ document.addEventListener("DOMContentLoaded", function() {
             
             layerControl.addOverlay(capaFincasLeaflet, "Fincas");
 
-            // Centrar y hacer zoom automáticamente sobre las fincas convertidas
-            if (capaFincasLeaflet.getLayers().length > 0) {
-                map.fitBounds(capaFincasLeaflet.getBounds());
-            }
         })
         .catch(err => console.error("Error en FINCAS:", err));
 
