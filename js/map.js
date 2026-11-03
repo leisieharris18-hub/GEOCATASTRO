@@ -46,36 +46,44 @@ const layerControl = L.control.layers(baseMaps, overlayMaps).addTo(map);
 
 document.addEventListener("DOMContentLoaded", function() {
 
-    // Función para convertir formato ArcGIS (Esri JSON) a GeoJSON compatible con Leaflet
+    // Definir la proyección UTM Zona 17N (utilizada en Panamá) y WGS84
+    proj4.defs("EPSG:32617", "+proj=utm +zone=17 +datum=WGS84 +units=m +no_defs");
+
+    // Función para transformar coordenadas de metros a grados y adaptar a Leaflet
     function adaptarFormatoArcGIS(rawData) {
         if (!rawData) return { type: "FeatureCollection", features: [] };
 
-        // Si ya es un GeoJSON estándar
-        if (rawData.type === "FeatureCollection") return rawData;
+        const featuresConvertidas = (rawData.features || []).map(f => {
+            let geometriaConvertida = null;
 
-        // Si es un JSON de ArcGIS con "features" que usan "attributes"
-        if (rawData.features && Array.isArray(rawData.features)) {
-            const featuresConvertidas = rawData.features.map(f => {
-                return {
-                    type: "Feature",
-                    properties: f.attributes || f.properties || {},
-                    geometry: f.geometry ? {
-                        type: f.geometry.rings ? "Polygon" : (f.geometry.paths ? "LineString" : "Point"),
-                        coordinates: f.geometry.rings || f.geometry.paths || [f.geometry.x, f.geometry.y]
-                    } : null
+            if (f.geometry && f.geometry.rings) {
+                // Transformar cada anillo de coordenadas UTM [X, Y] a [Longitud, Latitud]
+                const ringsTransformados = f.geometry.rings.map(ring => {
+                    return ring.map(coord => {
+                        // Si los números son grandes (> 1000), asumimos que son metros (UTM)
+                        if (Math.abs(coord[0]) > 180 || Math.abs(coord[1]) > 90) {
+                            const conv = proj4("EPSG:32617", "EPSG:4326", [coord[0], coord[1]]);
+                            return [conv[0], conv[1]]; // [Longitud, Latitud]
+                        }
+                        return coord;
+                    });
+                });
+
+                geometriaConvertida = {
+                    type: "Polygon",
+                    coordinates: ringsTransformados
                 };
-            });
-            return { type: "FeatureCollection", features: featuresConvertidas };
-        }
+            }
 
-        // Si es un arreglo plano
-        if (Array.isArray(rawData)) {
-            return { type: "FeatureCollection", features: rawData };
-        }
+            return {
+                type: "Feature",
+                properties: f.attributes || f.properties || {},
+                geometry: geometriaConvertida
+            };
+        });
 
-        return { type: "FeatureCollection", features: [] };
+        return { type: "FeatureCollection", features: featuresConvertidas };
     }
-
     // 1. Cargar Fincas
     fetch('FINCAS.json')
         .then(res => {
