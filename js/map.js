@@ -568,25 +568,29 @@ window.buscarPlanoManual = function() {
         const placeholder = document.getElementById('textoPlanoPlaceholder');
         
         if (imgElement && placeholder) {
-            const rutaImagen = RUTA_PLANOS_GENERAL + numPlano + ".jpg";
+            // Probamos primero con .JPG (mayúscula como está en tu repositorio)
+            const rutaImagen = RUTA_PLANOS_GENERAL + numPlano + ".JPG";
             
-            imgElement.src = rutaImagen;
             imgElement.style.display = 'block';
             placeholder.style.display = 'none';
+            imgElement.src = rutaImagen;
             imgElement.onclick = () => window.open(imgElement.src, '_blank');
             
             imgElement.onerror = function() {
-                this.src = RUTA_PLANOS_BARRIO_NORTE + numPlano + ".jpg";
+                // Respaldo intentando con .jpg minúscula o en Barrio Norte
+                this.src = RUTA_PLANOS_GENERAL + numPlano + ".jpg";
                 this.onerror = function() {
-                    this.style.display = 'none';
-                    placeholder.style.display = 'block';
-                    placeholder.innerText = "⚠️ Plano no encontrado en ninguna carpeta";
+                    this.src = RUTA_PLANOS_BARRIO_NORTE + numPlano + ".JPG";
+                    this.onerror = function() {
+                        this.style.display = 'none';
+                        placeholder.style.display = 'block';
+                        placeholder.innerText = "⚠️ Plano no encontrado en las carpetas";
+                    };
                 };
             };
         }
     }
 };
-
 
 // ============================================================================
 // ETAPA 9: INTERACCIÓN Y PANEL FLOTANTE DE ATRIBUTOS (CLIC EN MAPA)
@@ -634,9 +638,9 @@ function configurarClickAtributos(layer, tipoOrigen) {
             </button>
 
             <div style="text-align: center; font-weight: bold; font-size:12px; margin-bottom: 5px;">Vista del Plano:</div>
-            <div style="background: #f8f9fa; border: 1px solid #dfe6e9; min-height: 100px; display: flex; align-items: center; justify-content: center;">
+<div style="background: #f8f9fa; border: 1px solid #dfe6e9; min-height: 100px; display: flex; align-items: center; justify-content: center;">
                 ${nombrePlanoLimpio !== '-.jpg' ? `
-                    <img src="${carpetaSeleccionada}${nombrePlanoLimpio}" style="width: 100%; cursor: pointer;" onclick="window.open(this.src, '_blank')" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';" />
+                    <img src="${carpetaSeleccionada}${nombrePlanoLimpio}" style="width: 100%; cursor: pointer;" onclick="window.open(this.src, '_blank')" onerror="this.src='${carpetaSeleccionada}${nombrePlanoLimpio.replace('.jpg', '.JPG')}'; this.onerror=function(){this.style.display='none'; this.nextElementSibling.style.display='block';};" />
                     <div style="display:none; color:red; font-size:10px; padding:10px;">⚠️ Plano no encontrado en la carpeta correspondiente: <br><b>${nombrePlanoLimpio}</b></div>
                 ` : '<span style="font-size:11px; color:#b2bec3;">No hay plano asociado</span>'}
             </div>
