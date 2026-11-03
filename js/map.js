@@ -9,7 +9,8 @@ let capaCatastroLeaflet = null;
 let capaSeleccionadaGeoJSON = null;
 let capaClicTemporal = null;
 
-const RUTA_PLANOS = 'planos/';
+const RUTA_PLANOS_GENERAL = 'PLANOS CATASTRALES/';
+const RUTA_PLANOS_BARRIO_NORTE = 'PLANOS BARRIO NORTE/';
 
 const map = L.map("map", {
     center: [9.3615, -79.9010],
@@ -84,7 +85,27 @@ document.addEventListener("DOMContentLoaded", function() {
 
         return { type: "FeatureCollection", features: featuresConvertidas };
     }
-
+    // 1. Cargar Catastro
+    fetch('CATASTRALESC3.json')
+        .then(res => {
+            if (!res.ok) throw new Error("No se pudo cargar CATASTRALESC3.json");
+            return res.json();
+        })
+        .then(rawData => {
+            const dataLimpia = adaptarFormatoArcGIS(rawData);
+            datosCatastroGlobal = dataLimpia;
+            
+            capaCatastroLeaflet = L.geoJSON(dataLimpia, {
+                style: { color: '#00cec9', weight: 2, fillOpacity: 0.3 }, // Estilo celeste/turquesa
+                onEachFeature: function(feature, layer) {
+                    configurarClickAtributos(layer, 'catastro');
+                }
+            }).addTo(map);
+            
+            layerControl.addOverlay(capaCatastroLeaflet, "Catastrales C3");
+        })
+        .catch(err => console.error("Error en Catastro:", err));
+});
     // 1. Cargar Fincas
     fetch('FINCAS.json')
         .then(res => {
@@ -106,27 +127,6 @@ document.addEventListener("DOMContentLoaded", function() {
 
         })
         .catch(err => console.error("Error en FINCAS:", err));
-
-    // 2. Cargar Catastro
-    fetch('CATASTRALESC3.json')
-        .then(res => {
-            if (!res.ok) throw new Error("No se pudo cargar CATASTRALESC3.json");
-            return res.json();
-        })
-        .then(rawData => {
-            const dataLimpia = adaptarFormatoArcGIS(rawData);
-            datosCatastroGlobal = dataLimpia;
-            
-            capaCatastroLeaflet = L.geoJSON(dataLimpia, {
-                style: { color: '#00cec9', weight: 2, fillOpacity: 0.3 }, // Estilo celeste/turquesa
-                onEachFeature: function(feature, layer) {
-                    configurarClickAtributos(layer, 'catastro');
-                }
-            }).addTo(map);
-            
-            layerControl.addOverlay(capaCatastroLeaflet, "Catastrales C3");
-        })
-        .catch(err => console.error("Error en Catastro:", err));
 });
 
 // ============================================================================
@@ -583,22 +583,39 @@ window.buscarPlanoManual = function() {
         const placeholder = document.getElementById('textoPlanoPlaceholder');
         
         if (imgElement && placeholder) {
-            imgElement.src = RUTA_PLANOS + numPlano + ".jpg";
+            // Intentamos primero en la carpeta general que ya cargaste
+            const rutaImagen = RUTA_PLANOS_GENERAL + numPlano + ".jpg";
+            
+            imgElement.src = rutaImagen;
             imgElement.style.display = 'block';
             placeholder.style.display = 'none';
             imgElement.onclick = () => window.open(imgElement.src, '_blank');
+            
+            // Si falla al cargar en la general, puedes programar un respaldo automático (onerror)
+            imgElement.onerror = function() {
+                // Intento secundario en la carpeta de Barrio Norte
+                this.src = RUTA_PLANOS_BARRIO_NORTE + numPlano + ".jpg";
+                this.onerror = function() {
+                    this.style.display = 'none';
+                    placeholder.style.display = 'block';
+                    placeholder.innerText = "⚠️ Plano no encontrado en ninguna carpeta";
+                };
+            };
         }
     }
 };
 
-
+// ============================================================================
 // ============================================================================
 // ETAPA 9: INTERACCIÓN Y PANEL FLOTANTE DE ATRIBUTOS (CLIC EN MAPA)
 // ============================================================================
 
 function configurarClickAtributos(layer, tipoOrigen) {
     layer.on('click', function(e) {
-        if (e.originalEvent) L.DomEvent.stopPropagation(e.originalEvent);
+        // Prioridad absoluta a Fincas: detenemos el evento para que no traspase al catastro inferior
+        if (tipoOrigen === 'fincas') {
+            if (e.originalEvent) L.DomEvent.stopPropagation(e.originalEvent);
+        }
 
         const props = e.target.feature.properties || {};
         const centroide = (typeof e.target.getBounds === 'function') ? e.target.getBounds().getCenter() : e.latlng;
@@ -612,6 +629,12 @@ function configurarClickAtributos(layer, tipoOrigen) {
         const planoVal = props.PLANO || props.plano || props.imagen || '-';
 
         let nombrePlanoLimpio = planoVal !== '-' ? String(planoVal).split(/[\\/]/).pop().replace(/\.[^/.]+$/, "").trim() + ".jpg" : '-';
+
+        // SELECCIONAR CARPETA SEGÚN EL TIPO DE ORIGEN (Fincas -> Barrio Norte, Catastro -> General)
+        let carpetaSeleccionada = RUTA_PLANOS_GENERAL; // 'PLANOS CATASTRALES/' por defecto
+        if (tipoOrigen === 'fincas') {
+            carpetaSeleccionada = RUTA_PLANOS_BARRIO_NORTE; // 'PLANOS BARRIO NORTE/' para fincas
+        }
 
         const contenidoHtml = `
             <table style="width: 100%; border-collapse: collapse; font-size: 11px; margin-bottom: 10px; color: #333;">
@@ -633,8 +656,8 @@ function configurarClickAtributos(layer, tipoOrigen) {
             <div style="text-align: center; font-weight: bold; font-size:12px; margin-bottom: 5px;">Vista del Plano:</div>
             <div style="background: #f8f9fa; border: 1px solid #dfe6e9; min-height: 100px; display: flex; align-items: center; justify-content: center;">
                 ${nombrePlanoLimpio !== '-.jpg' ? `
-                    <img src="${RUTA_PLANOS}${nombrePlanoLimpio}" style="width: 100%; cursor: pointer;" onclick="window.open(this.src, '_blank')" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';" />
-                    <div style="display:none; color:red; font-size:10px; padding:10px;">⚠️ Plano no encontrado en /planos: <br><b>${nombrePlanoLimpio}</b></div>
+                    <img src="${carpetaSeleccionada}${nombrePlanoLimpio}" style="width: 100%; cursor: pointer;" onclick="window.open(this.src, '_blank')" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';" />
+                    <div style="display:none; color:red; font-size:10px; padding:10px;">⚠️ Plano no encontrado en la carpeta correspondiente: <br><b>${nombrePlanoLimpio}</b></div>
                 ` : '<span style="font-size:11px; color:#b2bec3;">No hay plano asociado</span>'}
             </div>
         `;
@@ -647,7 +670,6 @@ function configurarClickAtributos(layer, tipoOrigen) {
         }
     });
 }
-
 
 // ============================================================================
 // ETAPA 10: MANEJO DEL PANEL FLOTANTE (DRAG & DROP Y CIERRE)
