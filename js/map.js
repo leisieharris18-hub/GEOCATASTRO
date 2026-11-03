@@ -41,7 +41,7 @@ const layerControl = L.control.layers(baseMaps, overlayMaps).addTo(map);
 
 
 // ============================================================================
-// ETAPA 1.5: CARGA Y ADAPTACIÓN AUTOMÁTICA DE FORMATO ARCGIS A LEAFLET
+// ETAPA 1.5: CARGA, CONVERSIÓN UTM Y ENFOQUE AUTOMÁTICO DE DATOS ARCGIS
 // ============================================================================
 
 document.addEventListener("DOMContentLoaded", function() {
@@ -60,7 +60,7 @@ document.addEventListener("DOMContentLoaded", function() {
                 // Transformar cada anillo de coordenadas UTM [X, Y] a [Longitud, Latitud]
                 const ringsTransformados = f.geometry.rings.map(ring => {
                     return ring.map(coord => {
-                        // Si los números son grandes (> 1000), asumimos que son metros (UTM)
+                        // Si los números son grandes (> 180 o > 90), asumimos que son metros (UTM)
                         if (Math.abs(coord[0]) > 180 || Math.abs(coord[1]) > 90) {
                             const conv = proj4("EPSG:32617", "EPSG:4326", [coord[0], coord[1]]);
                             return [conv[0], conv[1]]; // [Longitud, Latitud]
@@ -84,6 +84,7 @@ document.addEventListener("DOMContentLoaded", function() {
 
         return { type: "FeatureCollection", features: featuresConvertidas };
     }
+
     // 1. Cargar Fincas
     fetch('FINCAS.json')
         .then(res => {
@@ -100,7 +101,13 @@ document.addEventListener("DOMContentLoaded", function() {
                     configurarClickAtributos(layer, 'fincas');
                 }
             }).addTo(map);
+            
             layerControl.addOverlay(capaFincasLeaflet, "Fincas");
+
+            // Centrar y hacer zoom automáticamente sobre las fincas convertidas
+            if (capaFincasLeaflet.getLayers().length > 0) {
+                map.fitBounds(capaFincasLeaflet.getBounds());
+            }
         })
         .catch(err => console.error("Error en FINCAS:", err));
 
@@ -120,6 +127,7 @@ document.addEventListener("DOMContentLoaded", function() {
                     configurarClickAtributos(layer, 'catastro');
                 }
             }).addTo(map);
+            
             layerControl.addOverlay(capaCatastroLeaflet, "Catastrales C3");
         })
         .catch(err => console.error("Error en Catastro:", err));
