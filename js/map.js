@@ -13,7 +13,7 @@ const RUTA_PLANOS = 'planos/';
 
 const map = L.map("map", {
     center: [9.3615, -79.9010],
-    zoom: 13.1,
+    zoom: 12.1,
     zoomControl: false
 });
 
