@@ -238,7 +238,7 @@ map.addControl(new StreetViewControl());
 
 
 // ============================================================================
-// ETAPA 4: HERRAMIENTAS GEODÉSICAS (UTM / GMS / DD)
+// ETAPA 4: HERRAMIENTAS GEODÉSICAS Y CONVERSIONES (UTM / GMS / DD)
 // ============================================================================
 
 function latLonToUTM(lat, lon, zone = 17) {
@@ -267,9 +267,26 @@ function latLonToDMS(lat, lng) {
     return { latDMS: convert(lat, true), lngDMS: convert(lng, false) };
 }
 
+// Función auxiliar para mostrar la alerta modal requerida
+function mostrarModalAlertaCoordenadas(mensajePersonalizado) {
+    const modal = document.getElementById('customModalCoord');
+    const msg = document.getElementById('customModalCoordMsg');
+    if (modal && msg) {
+        msg.innerHTML = `⚠️ <b>Verifique coordenadas:</b> ${mensajePersonalizado}`;
+        modal.style.display = 'flex';
+    } else {
+        alert("¡ALERTA DE COORDENADAS!\n⚠️ " + mensajePersonalizado);
+    }
+}
+
+window.cerrarModalCoordenadas = function() {
+    const modal = document.getElementById('customModalCoord');
+    if (modal) modal.style.display = 'none';
+};
+
 
 // ============================================================================
-// ETAPA 5: BARRAS INFERIORES DE LOCALIZACIÓN Y COORDENADAS (CORREGIDO)
+// ETAPA 5: BARRAS INFERIORES, VISUALIZACIÓN EN TIEMPO REAL Y BÚSQUEDA
 // ============================================================================
 
 window.listaMarcadoresCoordenadas = [];
@@ -278,15 +295,19 @@ function generarPopupCoordenadasHtml(lat, lng) {
     const utm = latLonToUTM(lat, lng, 17);
     const dms = latLonToDMS(lat, lng);
     return `
-        <div style="font-family: sans-serif; font-size: 12px; min-width: 160px;">
+        <div style="font-family: sans-serif; font-size: 12px; min-width: 180px;">
             <b>Lat/Lon:</b> ${lat.toFixed(6)}, ${lng.toFixed(6)}<br>
-            <b>UTM:</b> ${utm.easting} E, ${utm.northing} N<br>
+            <b>UTM:</b> ${utm.easting} E, ${utm.northing} N (Zona 17N)<br>
             <b>GMS:</b> ${dms.latDMS} - ${dms.lngDMS}<br>
             <button onclick="navigator.clipboard.writeText('${lat.toFixed(6)}, ${lng.toFixed(6)}'); alert('Copiado');" style="margin-top:6px; width:100%; background:#0984e3; color:white; border:none; padding:4px; border-radius:3px; cursor:pointer;">📋 Copiar</button>
+            <div style="font-size:10px; font-style:italic; color:#555; margin-top:6px; border-top:1px solid #ddd; padding-top:4px;">
+                Nota: Coordenadas de carácter meramente informativo. No son válidas para trámites legales, jurídicos o de titulación en el Registro Público.
+            </div>
         </div>
     `;
 }
 
+// Control de Pin al arrastrar desde el menú superior izquierdo
 const CoordsControl = L.Control.extend({
     options: { position: 'topleft' },
     onAdd: function(map) {
@@ -330,100 +351,143 @@ const CoordsControl = L.Control.extend({
 });
 map.addControl(new CoordsControl());
 
-// 1. Cambiar dinámicamente los placeholders y etiquetas según el formato seleccionado
+// 1. Cambio dinámico de formato y placeholders en la barra inferior
 window.cambiarFormatoCoordenadas = function() {
-    const formato = document.getElementById('formatoCoordenadas').value;
+    const selectEl = document.getElementById('selectTipoCoord') || document.getElementById('formatoCoordenadas');
+    if (!selectEl) return;
+    const formato = selectEl.value;
     const inputLong = document.getElementById('inputLong');
     const inputLat = document.getElementById('inputLat');
     const labelX = document.getElementById('labelX');
     const labelY = document.getElementById('labelY');
 
-    inputLong.value = '';
-    inputLat.value = '';
+    if(inputLong) inputLong.value = '';
+    if(inputLat) inputLat.value = '';
 
     if (formato === 'DD') {
-        labelX.innerText = 'Long:';
-        labelY.innerText = 'Lat:';
-        inputLong.placeholder = 'Ej. -79.90';
-        inputLat.placeholder = 'Ej. 9.36';
-    } else if (formato === 'DMS') {
-        labelX.innerText = 'Long (DMS):';
-        labelY.innerText = 'Lat (DMS):';
-        inputLong.placeholder = 'Ej. 79°54\'0"W';
-        inputLat.placeholder = 'Ej. 9°21\'36"N';
-    } else if (formato === 'UTM') {
-        labelX.innerText = 'Este (X):';
-        labelY.innerText = 'Norte (Y):';
-        inputLong.placeholder = 'Ej. 635000';
-        inputLat.placeholder = 'Ej. 1035000';
+        if(labelX) labelX.innerText = 'Long:';
+        if(labelY) labelY.innerText = 'Lat:';
+        if(inputLong) inputLong.placeholder = 'Ej. -79.90';
+        if(inputLat) inputLat.placeholder = 'Ej. 9.36';
+    } else if (formato === 'DMS' || formato === 'dms') {
+        if(labelX) labelX.innerText = 'Lon (GMS):';
+        if(labelY) labelY.innerText = 'Lat (GMS):';
+        if(inputLong) inputLong.placeholder = 'Ej. 79° 54\' 10" O';
+        if(inputLat) inputLat.placeholder = 'Ej. 9° 21\' 46" N';
+    } else if (formato === 'UTM' || formato === 'utm') {
+        if(labelX) labelX.innerText = 'Este (X):';
+        if(labelY) labelY.innerText = 'Norte (Y):';
+        if(inputLong) inputLong.placeholder = 'Ej. 620194';
+        if(inputLat) inputLat.placeholder = 'Ej. 1035070';
     }
 };
 
-// 2. Validar y procesar la navegación según el formato activo
+// 2. Visualización automática en tiempo real al mover el cursor sobre el mapa (si no se están editando los inputs)
+map.on('mousemove', function(e) {
+    const inputLong = document.getElementById('inputLong');
+    const inputLat = document.getElementById('inputLat');
+    
+    // Evitar sobreescribir si el usuario está escribiendo activamente en los campos
+    if (document.activeElement === inputLong || document.activeElement === inputLat) return;
+
+    const selectEl = document.getElementById('selectTipoCoord') || document.getElementById('formatoCoordenadas');
+    if (!selectEl) return;
+    const formato = selectEl.value.toUpperCase();
+
+    const lat = e.latlng.lat;
+    const lng = e.latlng.lng;
+
+    if (formato === 'DD') {
+        if(inputLong) inputLong.value = lng.toFixed(6);
+        if(inputLat) inputLat.value = lat.toFixed(6);
+    } else if (formato === 'UTM') {
+        const utm = latLonToUTM(lat, lng, 17);
+        if(inputLong) inputLong.value = utm.easting;
+        if(inputLat) inputLat.value = utm.northing;
+    } else if (formato === 'DMS') {
+        const dms = latLonToDMS(lat, lng);
+        if(inputLong) inputLong.value = dms.lngDMS;
+        if(inputLat) inputLat.value = dms.latDMS;
+    }
+});
+
+// 3. Detección de tecla Enter en los inputs de coordenadas
+window.verificarEnterCoordenadas = function(event) {
+    if (event.key === 'Enter') {
+        window.irACoordenadasPersonalizadas();
+    }
+};
+
+// Adjuntar evento keydown a los inputs si ya están cargados
+document.addEventListener("DOMContentLoaded", function() {
+    ['inputLong', 'inputLat'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) {
+            el.addEventListener('keydown', function(e) {
+                if (e.key === 'Enter') {
+                    window.irACoordenadasPersonalizadas();
+                }
+            });
+        }
+    });
+});
+
+// 4. Búsqueda y Validación estricta con Alerta Modal
 window.irACoordenadasPersonalizadas = function() {
-    const formato = document.getElementById('formatoCoordenadas').value;
-    const valX = document.getElementById('inputLong').value.trim();
-    const valY = document.getElementById('inputLat').value.trim();
+    const selectEl = document.getElementById('selectTipoCoord') || document.getElementById('formatoCoordenadas');
+    const formato = selectEl ? selectEl.value.toUpperCase() : 'DD';
+    const valX = document.getElementById('inputLong') ? document.getElementById('inputLong').value.trim() : '';
+    const valY = document.getElementById('inputLat') ? document.getElementById('inputLat').value.trim() : '';
 
     if (!valX || !valY) {
-        alert("Por favor, complete ambos campos.");
+        mostrarModalAlertaCoordenadas("Los campos de coordenadas no pueden estar vacíos.");
         return;
     }
 
-    // 1. FORMATO GRADOS DECIMALES (DD)
+    // Validación y procesamiento por Formato
     if (formato === 'DD') {
         const lng = parseFloat(valX);
         const lat = parseFloat(valY);
-        if (!isNaN(lng) && !isNaN(lat)) {
-            map.setView([lat, lng], 18);
-            L.marker([lat, lng]).addTo(map).bindPopup(`Coordenada DD: ${lat}, ${lng}`).openPopup();
-        } else {
-            alert("Ingrese valores numéricos válidos para Grados Decimales.");
+        if (isNaN(lng) || isNaN(lat) || lat < -90 || lat > 90 || lng < -180 || lng > 180) {
+            mostrarModalAlertaCoordenadas("Los valores ingresados no corresponden a Grados Decimales válidos (Lat: -90 a 90, Lon: -180 a 180).");
+            return;
         }
-    } 
-    // 2. FORMATO UTM (WGS84 / Zona 17N para Panamá)
-    else if (formato === 'UTM') {
+        map.setView([lat, lng], 18);
+        L.marker([lat, lng]).addTo(map).bindPopup(generarPopupCoordenadasHtml(lat, lng)).openPopup();
+
+    } else if (formato === 'UTM') {
         const easting = parseFloat(valX);
         const northing = parseFloat(valY);
-        if (!isNaN(easting) && !isNaN(northing)) {
-            try {
-                // Si usas Proj4js para convertir UTM a Lat/Lon (WGS84)
-                // Asegúrate de que la definición de la zona 17N esté disponible en tu proyecto
-                if (typeof proj4 !== 'undefined') {
-                    // EPSG:32617 (WGS 84 / UTM zone 17N) a EPSG:4326 (WGS 84)
-                    const utmProj = "+proj=utm +zone=17 +datum=WGS84 +units=m +no_defs";
-                    const wgs84Proj = "+proj=longlat +datum=WGS84 +no_defs";
-                    const [lng, lat] = proj4(utmProj, wgs84Proj, [easting, northing]);
-
-                    map.setView([lat, lng], 18);
-                    L.marker([lat, lng]).addTo(map).bindPopup(`UTM: ${easting} E, ${northing} N`).openPopup();
-                } else {
-                    // Método alternativo si no usas proj4 directo en esta función pero tienes utmToLatLon
-                    const latLon = utmToLatLon ? utmToLatLon(easting, northing, 17) : null;
-                    if (latLon) {
-                        map.setView([latLon.lat, latLon.lng], 18);
-                        L.marker([latLon.lat, latLon.lng]).addTo(map).bindPopup(`UTM: ${easting} E, ${northing} N`).openPopup();
-                    } else {
-                        alert("No se encontró la función de conversión UTM en el sistema.");
-                    }
-                }
-            } catch (error) {
-                alert("Error al procesar las coordenadas UTM. Verifique los valores.");
-            }
-        } else {
-            alert("Ingrese valores numéricos válidos para Este y Norte.");
+        // Validación de rangos aproximados UTM Zona 17N (Panamá / Centroamérica)
+        if (isNaN(easting) || isNaN(northing) || easting < 100000 || easting > 900000 || northing < 0 || northing > 10000000) {
+            mostrarModalAlertaCoordenadas("Los valores ingresados no corresponden a coordenadas UTM válidas (Zona 17N).");
+            return;
         }
-    }
-    // 3. FORMATO GRADOS, MINUTOS, SEGUNDOS (DMS)
-    else if (formato === 'DMS') {
-        // Función auxiliar interna para parsear cadenas DMS sencillas o numéricas
+        try {
+            if (typeof proj4 !== 'undefined') {
+                const utmProj = "+proj=utm +zone=17 +datum=WGS84 +units=m +no_defs";
+                const wgs84Proj = "+proj=longlat +datum=WGS84 +no_defs";
+                const [lng, lat] = proj4(utmProj, wgs84Proj, [easting, northing]);
+
+                map.setView([lat, lng], 18);
+                L.marker([lat, lng]).addTo(map).bindPopup(generarPopupCoordenadasHtml(lat, lng)).openPopup();
+            } else {
+                mostrarModalAlertaCoordenadas("Librería Proj4 no disponible para conversión UTM.");
+            }
+        } catch (e) {
+            mostrarModalAlertaCoordenadas("Error al procesar las coordenadas UTM ingresadas.");
+        }
+
+    } else if (formato === 'DMS') {
         const parseDMS = (dmsStr) => {
-            // Intenta extraer números si viene en formato texto estilo 9°21'36"N o similar
-            const cleanStr = dmsStr.replace(/[^\d.-]/g, ' ');
-            const parts = cleanStr.trim().split(/\s+/).map(Number);
-            if (parts.length >= 3) {
-                let dec = parts[0] + parts[1] / 60 + parts[2] / 3600;
-                if (dmsStr.toUpperCase().includes('S') || dmsStr.toUpperCase().includes('W') || dmsStr.startsWith('-')) {
+            const clean = dmsStr.replace(/["']/g, ' ').replace(/[°]/g, ' ');
+            const partes = clean.trim().split(/\s+/);
+            if (partes.length >= 3) {
+                let deg = parseFloat(partes[0]) || 0;
+                let min = parseFloat(partes[1]) || 0;
+                let sec = parseFloat(partes[2]) || 0;
+                let dec = deg + (min / 60) + (sec / 3600);
+                if (dmsStr.toUpperCase().includes('S') || dmsStr.toUpperCase().includes('O') || dmsStr.toUpperCase().includes('W') || dmsStr.startsWith('-')) {
                     dec = -dec;
                 }
                 return dec;
@@ -434,15 +498,15 @@ window.irACoordenadasPersonalizadas = function() {
         const lng = parseDMS(valX);
         const lat = parseDMS(valY);
 
-        if (!isNaN(lng) && !isNaN(lat)) {
-            map.setView([lat, lng], 18);
-            L.marker([lat, lng]).addTo(map).bindPopup(`Coordenada GMS Buscada`).openPopup();
-        } else {
-            alert("Formato DMS inválido. Use un formato compatible (ej. 79°54'0\"W).");
+        if (isNaN(lng) || isNaN(lat) || Math.abs(lat) > 90 || Math.abs(lng) > 180) {
+            mostrarModalAlertaCoordenadas("El formato GMS ingresado es incorrecto o presenta inconsistencias.");
+            return;
         }
+
+        map.setView([lat, lng], 18);
+        L.marker([lat, lng]).addTo(map).bindPopup(generarPopupCoordenadasHtml(lat, lng)).openPopup();
     }
 };
-
 // ============================================================================
 // ETAPA 6: MODALES Y ALERTAS DEL SISTEMA
 // ============================================================================
