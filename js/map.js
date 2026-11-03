@@ -41,29 +41,39 @@ const layerControl = L.control.layers(baseMaps, overlayMaps).addTo(map);
 
 
 // ============================================================================
-// ETAPA 1.5: CARGA Y ADAPTACIÓN FORZADA DE DATOS GEOJSON
+// ETAPA 1.5: CARGA Y ADAPTACIÓN AUTOMÁTICA DE FORMATO ARCGIS A LEAFLET
 // ============================================================================
 
 document.addEventListener("DOMContentLoaded", function() {
-    
-    // Función auxiliar para transformar cualquier estructura de datos en un GeoJSON válido para Leaflet
-    function procesarGeoJsonSeguro(rawData) {
+
+    // Función para convertir formato ArcGIS (Esri JSON) a GeoJSON compatible con Leaflet
+    function adaptarFormatoArcGIS(rawData) {
         if (!rawData) return { type: "FeatureCollection", features: [] };
-        
-        // Si viene como un arreglo plano [...]
+
+        // Si ya es un GeoJSON estándar
+        if (rawData.type === "FeatureCollection") return rawData;
+
+        // Si es un JSON de ArcGIS con "features" que usan "attributes"
+        if (rawData.features && Array.isArray(rawData.features)) {
+            const featuresConvertidas = rawData.features.map(f => {
+                return {
+                    type: "Feature",
+                    properties: f.attributes || f.properties || {},
+                    geometry: f.geometry ? {
+                        type: f.geometry.rings ? "Polygon" : (f.geometry.paths ? "LineString" : "Point"),
+                        coordinates: f.geometry.rings || f.geometry.paths || [f.geometry.x, f.geometry.y]
+                    } : null
+                };
+            });
+            return { type: "FeatureCollection", features: featuresConvertidas };
+        }
+
+        // Si es un arreglo plano
         if (Array.isArray(rawData)) {
             return { type: "FeatureCollection", features: rawData };
         }
-        // Si ya es un FeatureCollection
-        if (rawData.type === "FeatureCollection") {
-            return rawData;
-        }
-        // Si es una sola entidad geométrica suelta
-        if (rawData.type === "Feature" || rawData.geometry) {
-            return { type: "FeatureCollection", features: [rawData] };
-        }
-        // Si tiene propiedades y coordenadas directas
-        return { type: "FeatureCollection", features: [ { type: "Feature", geometry: rawData.geometry || null, properties: rawData.properties || rawData } ] };
+
+        return { type: "FeatureCollection", features: [] };
     }
 
     // 1. Cargar Fincas
@@ -73,11 +83,11 @@ document.addEventListener("DOMContentLoaded", function() {
             return res.json();
         })
         .then(rawData => {
-            const dataLimpia = procesarGeoJsonSeguro(rawData);
+            const dataLimpia = adaptarFormatoArcGIS(rawData);
             datosFincasGlobal = dataLimpia;
             
             capaFincasLeaflet = L.geoJSON(dataLimpia, {
-                style: { color: '#e67e22', weight: 2, fillOpacity: 0.3 }, // Color anaranjado idéntico al de tu diseño
+                style: { color: '#e67e22', weight: 2, fillOpacity: 0.3 }, // Estilo anaranjado
                 onEachFeature: function(feature, layer) {
                     configurarClickAtributos(layer, 'fincas');
                 }
@@ -93,11 +103,11 @@ document.addEventListener("DOMContentLoaded", function() {
             return res.json();
         })
         .then(rawData => {
-            const dataLimpia = procesarGeoJsonSeguro(rawData);
+            const dataLimpia = adaptarFormatoArcGIS(rawData);
             datosCatastroGlobal = dataLimpia;
             
             capaCatastroLeaflet = L.geoJSON(dataLimpia, {
-                style: { color: '#00cec9', weight: 2, fillOpacity: 0.3 },
+                style: { color: '#00cec9', weight: 2, fillOpacity: 0.3 }, // Estilo celeste/turquesa
                 onEachFeature: function(feature, layer) {
                     configurarClickAtributos(layer, 'catastro');
                 }
