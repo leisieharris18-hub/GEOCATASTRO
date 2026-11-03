@@ -86,7 +86,7 @@ document.addEventListener("DOMContentLoaded", function() {
         return { type: "FeatureCollection", features: featuresConvertidas };
     }
 
-    // 1. Cargar Catastro (Capa inferior de respaldo)
+// 1. Cargar Catastro (Capa inferior de respaldo)
     fetch('CATASTRALESC3.json')
         .then(res => {
             if (!res.ok) throw new Error("No se pudo cargar CATASTRALESC3.json");
@@ -97,7 +97,7 @@ document.addEventListener("DOMContentLoaded", function() {
             datosCatastroGlobal = dataLimpia;
             
             capaCatastroLeaflet = L.geoJSON(dataLimpia, {
-                style: { color: '#00cec9', weight: 2, fillOpacity: 0.3 }, // Estilo celeste/turquesa
+                style: { color: '#00cec9', weight: 2, fillOpacity: 0.3 }, // <--- AQUÍ ESTÁ EL CAMBIO
                 onEachFeature: function(feature, layer) {
                     configurarClickAtributos(layer, 'catastro');
                 }
@@ -309,17 +309,21 @@ function generarPopupCoordenadasHtml(lat, lng) {
         contenidoFormato = `<b>GMS:</b> ${textoCopiar}`;
     }
 
+    // Detectar si el modo oscuro está activo para cambiar el color de la nota informativa
+    const esDarkMode = document.body.classList.contains('dark-mode');
+    const colorNota = esDarkMode ? '#ffffff' : '#555555';
+    const colorBordeNota = esDarkMode ? '#555555' : '#dddddd';
+
     return `
         <div style="font-family: sans-serif; font-size: 12px; min-width: 180px;">
             ${contenidoFormato}<br>
             <button onclick="navigator.clipboard.writeText('${textoCopiar}'); alert('Copiado');" style="margin-top:6px; width:100%; background:#0984e3; color:white; border:none; padding:4px; border-radius:3px; cursor:pointer;">📋 Copiar</button>
-            <div style="font-size:10px; font-style:italic; color:#555; margin-top:6px; border-top:1px solid #ddd; padding-top:4px;">
+            <div style="font-size:10px; font-style:italic; color:${colorNota}; margin-top:6px; border-top:1px solid ${colorBordeNota}; padding-top:4px;">
                 Nota: Coordenadas de carácter meramente informativo. No son válidas para trámites legales, jurídicos o de titulación en el Registro Público.
             </div>
         </div>
     `;
 }
-
 const CoordsControl = L.Control.extend({
     options: { position: 'topleft' },
     onAdd: function(map) {
@@ -696,5 +700,39 @@ document.addEventListener('DOMContentLoaded', function() {
         });
 
         document.addEventListener('mouseup', () => { isDragging = false; });
+    }
+});
+// ============================================================================
+// ETAPA 11: SOPORTE GLOBAL DE TECLA ENTER PARA BÚSQUEDAS
+// ============================================================================
+
+document.addEventListener("DOMContentLoaded", function() {
+    // Escuchar Enter en los inputs de Gestión Catastral (Finca, Tomo, Folio, Propietario, etc.)
+    const inputsCatastro = ['inputFinca', 'inputTomo', 'inputFolio', 'inputUbicacion', 'inputPropietario'];
+    inputsCatastro.forEach(id => {
+        const el = document.getElementById(id);
+        if (el) {
+            el.addEventListener('keydown', function(e) {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    if (typeof window.buscarCatastro === 'function') {
+                        window.buscarCatastro();
+                    }
+                }
+            });
+        }
+    });
+
+    // Escuchar Enter en el buscador manual de planos
+    const inputPlano = document.getElementById('inputPlanoSearch');
+    if (inputPlano) {
+        inputPlano.addEventListener('keydown', function(e) {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                if (typeof window.buscarPlanoManual === 'function') {
+                    window.buscarPlanoManual();
+                }
+            }
+        });
     }
 });
