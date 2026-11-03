@@ -83,7 +83,7 @@ document.addEventListener("DOMContentLoaded", function() {
         return { type: "FeatureCollection", features: featuresConvertidas };
     }
 
-    // 1. Cargar Catastro (Capa inferior con borde celeste y sin relleno)
+   // 1. Cargar Catastro (Queda abajo como capa secundaria)
     fetch('CATASTRALESC3.json')
         .then(res => {
             if (!res.ok) throw new Error("No se pudo cargar CATASTRALESC3.json");
@@ -104,7 +104,7 @@ document.addEventListener("DOMContentLoaded", function() {
         })
         .catch(err => console.error("Error en Catastro:", err));
 
-    // 2. Cargar Fincas (Capa superior con prioridad absoluta)
+    // 2. Cargar Fincas (Carga después y se posiciona estrictamente arriba con prioridad)
     fetch('FINCAS.json')
         .then(res => {
             if (!res.ok) throw new Error("No se pudo cargar FINCAS.json");
@@ -121,6 +121,7 @@ document.addEventListener("DOMContentLoaded", function() {
                 }
             }).addTo(map);
             
+            // Forzar que Fincas esté siempre al frente de los clics visuales
             capaFincasLeaflet.bringToFront();
             layerControl.addOverlay(capaFincasLeaflet, "Fincas");
         })
