@@ -635,12 +635,13 @@ function configurarClickAtributos(layer, tipoOrigen) {
             </button>
 
             <div style="text-align: center; font-weight: bold; font-size:12px; margin-bottom: 5px;">Vista del Plano:</div>
-<div style="background: #f8f9fa; border: 1px solid #dfe6e9; min-height: 100px; display: flex; align-items: center; justify-content: center;">
+            <div style="background: #f8f9fa; border: 1px solid #dfe6e9; min-height: 100px; display: flex; align-items: center; justify-content: center;">
                 ${nombrePlanoLimpio !== '-.jpg' ? `
-                    <img src="${carpetaSeleccionada}${nombrePlanoLimpio}" style="width: 100%; cursor: pointer;" onclick="window.open(this.src, '_blank')" onerror="this.src='${RUTA_PLANOS_BARRIO_NORTE}${nombrePlanoLimpio}'; this.onerror=function(){this.style.display='none'; this.nextElementSibling.style.display='block';};" />
+                    <img id="planoImgPopup" src="${carpetaSeleccionada}${nombrePlanoLimpio}" style="width: 100%; cursor: pointer;" onclick="window.open(this.src, '_blank')" onerror="this.src='${RUTA_PLANOS_BARRIO_NORTE}${nombrePlanoLimpio}'; this.onerror=function(){this.style.display='none'; this.nextElementSibling.style.display='block';};" />
                     <div style="display:none; color:red; font-size:10px; padding:10px;">⚠️ Plano no encontrado en la carpeta correspondiente: <br><b>${nombrePlanoLimpio}</b></div>
                 ` : '<span style="font-size:11px; color:#b2bec3;">No hay plano asociado</span>'}
             </div>
+        `;
 
         const panel = document.getElementById('attributeFloatingPanel');
         const bodyContent = document.getElementById('attributePanelBody');
@@ -650,7 +651,6 @@ function configurarClickAtributos(layer, tipoOrigen) {
         }
     });
 }
-
 
 // ============================================================================
 // ETAPA 10: MANEJO DEL PANEL FLOTANTE (DRAG & DROP Y CIERRE)
