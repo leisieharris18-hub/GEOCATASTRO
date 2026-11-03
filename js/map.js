@@ -41,59 +41,70 @@ const layerControl = L.control.layers(baseMaps, overlayMaps).addTo(map);
 
 
 // ============================================================================
-// ETAPA 1.5: CARGA SEGURA Y DEPURACIÓN DE DATOS GEOJSON
+// ETAPA 1.5: CARGA Y ADAPTACIÓN FORZADA DE DATOS GEOJSON
 // ============================================================================
 
 document.addEventListener("DOMContentLoaded", function() {
-    // Función genérica para cargar y depurar cualquier JSON
-    function cargarCapaSegura(nombreArchivo, estiloConfig, tipoNombre, callbackCapa) {
-        fetch(nombreArchivo)
-            .then(res => {
-                if (!res.ok) throw new Error(`HTTP error! estado: ${res.status}`);
-                return res.text(); // Lo leemos primero como texto para verificar qué es
-            })
-            .then(texto => {
-                let rawData;
-                try {
-                    rawData = JSON.parse(texto); // Intentamos convertirlo a JSON
-                } catch (e) {
-                    console.error(`El archivo ${nombreArchivo} NO es un JSON válido. Contenido recibido:`, texto.substring(0, 150));
-                    throw new Error(`El archivo ${nombreArchivo} está corrupto o no es JSON.`);
-                }
-
-                // Asegurar formato FeatureCollection válido para Leaflet
-                const data = Array.isArray(rawData) 
-                    ? { type: "FeatureCollection", features: rawData } 
-                    : (rawData.features ? rawData : { type: "FeatureCollection", features: [rawData] });
-
-                callbackCapa(data);
-            })
-            .catch(err => console.error(`Error crítico cargando ${nombreArchivo}:`, err.message));
+    
+    // Función auxiliar para transformar cualquier estructura de datos en un GeoJSON válido para Leaflet
+    function procesarGeoJsonSeguro(rawData) {
+        if (!rawData) return { type: "FeatureCollection", features: [] };
+        
+        // Si viene como un arreglo plano [...]
+        if (Array.isArray(rawData)) {
+            return { type: "FeatureCollection", features: rawData };
+        }
+        // Si ya es un FeatureCollection
+        if (rawData.type === "FeatureCollection") {
+            return rawData;
+        }
+        // Si es una sola entidad geométrica suelta
+        if (rawData.type === "Feature" || rawData.geometry) {
+            return { type: "FeatureCollection", features: [rawData] };
+        }
+        // Si tiene propiedades y coordenadas directas
+        return { type: "FeatureCollection", features: [ { type: "Feature", geometry: rawData.geometry || null, properties: rawData.properties || rawData } ] };
     }
 
     // 1. Cargar Fincas
-    cargarCapaSegura('FINCAS.json', { color: '#0984e3', weight: 1.5, fillOpacity: 0.2 }, 'fincas', function(data) {
-        datosFincasGlobal = data;
-        capaFincasLeaflet = L.geoJSON(data, {
-            style: { color: '#0984e3', weight: 1.5, fillOpacity: 0.2 },
-            onEachFeature: function(feature, layer) {
-                configurarClickAtributos(layer, 'fincas');
-            }
-        }).addTo(map);
-        layerControl.addOverlay(capaFincasLeaflet, "Fincas");
-    });
+    fetch('FINCAS.json')
+        .then(res => {
+            if (!res.ok) throw new Error("No se pudo cargar FINCAS.json");
+            return res.json();
+        })
+        .then(rawData => {
+            const dataLimpia = procesarGeoJsonSeguro(rawData);
+            datosFincasGlobal = dataLimpia;
+            
+            capaFincasLeaflet = L.geoJSON(dataLimpia, {
+                style: { color: '#e67e22', weight: 2, fillOpacity: 0.3 }, // Color anaranjado idéntico al de tu diseño
+                onEachFeature: function(feature, layer) {
+                    configurarClickAtributos(layer, 'fincas');
+                }
+            }).addTo(map);
+            layerControl.addOverlay(capaFincasLeaflet, "Fincas");
+        })
+        .catch(err => console.error("Error en FINCAS:", err));
 
     // 2. Cargar Catastro
-    cargarCapaSegura('CATASTRALESC3.json', { color: '#00cec9', weight: 1.5, fillOpacity: 0.2 }, 'catastro', function(data) {
-        datosCatastroGlobal = data;
-        capaCatastroLeaflet = L.geoJSON(data, {
-            style: { color: '#00cec9', weight: 1.5, fillOpacity: 0.2 },
-            onEachFeature: function(feature, layer) {
-                configurarClickAtributos(layer, 'catastro');
-            }
-        }).addTo(map);
-        layerControl.addOverlay(capaCatastroLeaflet, "Catastrales C3");
-    });
+    fetch('CATASTRALESC3.json')
+        .then(res => {
+            if (!res.ok) throw new Error("No se pudo cargar CATASTRALESC3.json");
+            return res.json();
+        })
+        .then(rawData => {
+            const dataLimpia = procesarGeoJsonSeguro(rawData);
+            datosCatastroGlobal = dataLimpia;
+            
+            capaCatastroLeaflet = L.geoJSON(dataLimpia, {
+                style: { color: '#00cec9', weight: 2, fillOpacity: 0.3 },
+                onEachFeature: function(feature, layer) {
+                    configurarClickAtributos(layer, 'catastro');
+                }
+            }).addTo(map);
+            layerControl.addOverlay(capaCatastroLeaflet, "Catastrales C3");
+        })
+        .catch(err => console.error("Error en Catastro:", err));
 });
 
 // ============================================================================
