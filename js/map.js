@@ -85,7 +85,8 @@ document.addEventListener("DOMContentLoaded", function() {
 
         return { type: "FeatureCollection", features: featuresConvertidas };
     }
-    // 1. Cargar Catastro
+
+    // 1. Cargar Catastro (Capa inferior de respaldo)
     fetch('CATASTRALESC3.json')
         .then(res => {
             if (!res.ok) throw new Error("No se pudo cargar CATASTRALESC3.json");
@@ -105,8 +106,8 @@ document.addEventListener("DOMContentLoaded", function() {
             layerControl.addOverlay(capaCatastroLeaflet, "Catastrales C3");
         })
         .catch(err => console.error("Error en Catastro:", err));
-});
-    // 1. Cargar Fincas
+
+    // 2. Cargar Fincas (Capa superior con prioridad absoluta)
     fetch('FINCAS.json')
         .then(res => {
             if (!res.ok) throw new Error("No se pudo cargar FINCAS.json");
@@ -123,11 +124,13 @@ document.addEventListener("DOMContentLoaded", function() {
                 }
             }).addTo(map);
             
+            // Forzar que Fincas esté siempre al frente de los clics
+            capaFincasLeaflet.bringToFront();
             layerControl.addOverlay(capaFincasLeaflet, "Fincas");
-
         })
         .catch(err => console.error("Error en FINCAS:", err));
 });
+
 
 // ============================================================================
 // ETAPA 2: INTEGRACIÓN DEL MODO OSCURO (DARK THEME)
@@ -263,7 +266,6 @@ function latLonToDMS(lat, lng) {
     return { latDMS: convert(lat, true), lngDMS: convert(lng, false) };
 }
 
-// Función auxiliar para mostrar la alerta modal requerida
 function mostrarModalAlertaCoordenadas(mensajePersonalizado) {
     const modal = document.getElementById('customModalCoord');
     const msg = document.getElementById('customModalCoordMsg');
@@ -287,7 +289,6 @@ window.cerrarModalCoordenadas = function() {
 
 window.listaMarcadoresCoordenadas = [];
 
-// Función para generar el contenido del popup mostrando ÚNICAMENTE el formato seleccionado
 function generarPopupCoordenadasHtml(lat, lng) {
     const selectEl = document.getElementById('selectTipoCoord') || document.getElementById('formatoCoordenadas');
     const formato = selectEl ? selectEl.value.toUpperCase() : 'DD';
@@ -319,7 +320,6 @@ function generarPopupCoordenadasHtml(lat, lng) {
     `;
 }
 
-// Control de Pin al arrastrar desde el menú superior izquierdo
 const CoordsControl = L.Control.extend({
     options: { position: 'topleft' },
     onAdd: function(map) {
@@ -363,7 +363,6 @@ const CoordsControl = L.Control.extend({
 });
 map.addControl(new CoordsControl());
 
-// 1. Cambio dinámico de placeholders y etiquetas en la barra inferior (SIN actualizar con el cursor)
 window.cambiarFormatoCoordenadas = function() {
     const selectEl = document.getElementById('selectTipoCoord') || document.getElementById('formatoCoordenadas');
     if (!selectEl) return;
@@ -373,7 +372,6 @@ window.cambiarFormatoCoordenadas = function() {
     const labelX = document.getElementById('labelX');
     const labelY = document.getElementById('labelY');
 
-    // Limpiar campos al cambiar de formato para que el usuario ingrese nuevos datos manualmente
     if(inputLong) inputLong.value = '';
     if(inputLat) inputLat.value = '';
 
@@ -395,7 +393,6 @@ window.cambiarFormatoCoordenadas = function() {
     }
 };
 
-// 2. Detección de tecla Enter en los inputs de coordenadas
 document.addEventListener("DOMContentLoaded", function() {
     ['inputLong', 'inputLat'].forEach(id => {
         const el = document.getElementById(id);
@@ -409,7 +406,6 @@ document.addEventListener("DOMContentLoaded", function() {
     });
 });
 
-// 3. Función de búsqueda manual (al dar clic en "Ir" o presionar Enter) con validación estricta
 window.irACoordenadasPersonalizadas = function() {
     const selectEl = document.getElementById('selectTipoCoord') || document.getElementById('formatoCoordenadas');
     const formato = selectEl ? selectEl.value.toUpperCase() : 'DD';
@@ -425,7 +421,7 @@ window.irACoordenadasPersonalizadas = function() {
         const lng = parseFloat(valX);
         const lat = parseFloat(valY);
         if (isNaN(lng) || isNaN(lat) || lat < -90 || lat > 90 || lng < -180 || lng > 180) {
-            mostrarModalAlertaCoordenadas("Los valores ingresados no corresponden a Grados Decimales válidos (Lat: -90 a 90, Lon: -180 a 180).");
+            mostrarModalAlertaCoordenadas("Los valores ingresados no corresponden a Grados Decimales válidos.");
             return;
         }
         map.setView([lat, lng], 18);
@@ -483,22 +479,7 @@ window.irACoordenadasPersonalizadas = function() {
     }
 };
 
-// Función auxiliar para mostrar la alerta modal requerida
-function mostrarModalAlertaCoordenadas(mensajePersonalizado) {
-    const modal = document.getElementById('customModalCoord');
-    const msg = document.getElementById('customModalCoordMsg');
-    if (modal && msg) {
-        msg.innerHTML = `⚠️ <b>Verifique coordenadas:</b> ${mensajePersonalizado}`;
-        modal.style.display = 'flex';
-    } else {
-        alert("¡ALERTA DE COORDENADAS!\n⚠️ " + mensajePersonalizado);
-    }
-}
 
-window.cerrarModalCoordenadas = function() {
-    const modal = document.getElementById('customModalCoord');
-    if (modal) modal.style.display = 'none';
-};
 // ============================================================================
 // ETAPA 6: MODALES Y ALERTAS DEL SISTEMA
 // ============================================================================
@@ -583,7 +564,6 @@ window.buscarPlanoManual = function() {
         const placeholder = document.getElementById('textoPlanoPlaceholder');
         
         if (imgElement && placeholder) {
-            // Intentamos primero en la carpeta general que ya cargaste
             const rutaImagen = RUTA_PLANOS_GENERAL + numPlano + ".jpg";
             
             imgElement.src = rutaImagen;
@@ -591,9 +571,7 @@ window.buscarPlanoManual = function() {
             placeholder.style.display = 'none';
             imgElement.onclick = () => window.open(imgElement.src, '_blank');
             
-            // Si falla al cargar en la general, puedes programar un respaldo automático (onerror)
             imgElement.onerror = function() {
-                // Intento secundario en la carpeta de Barrio Norte
                 this.src = RUTA_PLANOS_BARRIO_NORTE + numPlano + ".jpg";
                 this.onerror = function() {
                     this.style.display = 'none';
@@ -605,14 +583,13 @@ window.buscarPlanoManual = function() {
     }
 };
 
-// ============================================================================
+
 // ============================================================================
 // ETAPA 9: INTERACCIÓN Y PANEL FLOTANTE DE ATRIBUTOS (CLIC EN MAPA)
 // ============================================================================
 
 function configurarClickAtributos(layer, tipoOrigen) {
     layer.on('click', function(e) {
-        // Prioridad absoluta a Fincas: detenemos el evento para que no traspase al catastro inferior
         if (tipoOrigen === 'fincas') {
             if (e.originalEvent) L.DomEvent.stopPropagation(e.originalEvent);
         }
@@ -630,10 +607,9 @@ function configurarClickAtributos(layer, tipoOrigen) {
 
         let nombrePlanoLimpio = planoVal !== '-' ? String(planoVal).split(/[\\/]/).pop().replace(/\.[^/.]+$/, "").trim() + ".jpg" : '-';
 
-        // SELECCIONAR CARPETA SEGÚN EL TIPO DE ORIGEN (Fincas -> Barrio Norte, Catastro -> General)
-        let carpetaSeleccionada = RUTA_PLANOS_GENERAL; // 'PLANOS CATASTRALES/' por defecto
+        let carpetaSeleccionada = RUTA_PLANOS_GENERAL; 
         if (tipoOrigen === 'fincas') {
-            carpetaSeleccionada = RUTA_PLANOS_BARRIO_NORTE; // 'PLANOS BARRIO NORTE/' para fincas
+            carpetaSeleccionada = RUTA_PLANOS_BARRIO_NORTE; 
         }
 
         const contenidoHtml = `
@@ -670,6 +646,7 @@ function configurarClickAtributos(layer, tipoOrigen) {
         }
     });
 }
+
 
 // ============================================================================
 // ETAPA 10: MANEJO DEL PANEL FLOTANTE (DRAG & DROP Y CIERRE)
