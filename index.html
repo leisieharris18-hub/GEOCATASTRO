@@ -137,21 +137,21 @@
     <div id="map-container">
         <div id="map"></div>
 
-        <!-- Widget Flotante de Coordenadas -->
-        <div class="coord-widget-container">
-            <div class="coord-inputs">
-                <select id="selectTipoCoord" onchange="cambiarFormatoCoordenadas()">
-                    <option value="dd">DD (Grados Decimales)</option>
-                    <option value="utm">UTM (WGS84 17N)</option>
-                    <option value="dms">GMS (Grados, Min, Seg)</option>
-                </select>
-                <span id="labelX" class="coord-label">Long:</span>
-                <input type="text" id="inputLong" placeholder="Ej. -79.90">
-                <span id="labelY" class="coord-label">Lat:</span>
-                <input type="text" id="inputLat" placeholder="Ej. 9.36">
-                <button onclick="irACoordenadasPersonalizadas()">Ir</button>
-            </div>
-        </div>
+<!-- Widget Flotante de Coordenadas -->
+<div class="coord-widget-container">
+    <div class="coord-inputs">
+        <select id="formatoCoordenadas" onchange="cambiarFormatoCoordenadas()">
+            <option value="DD">DD (Grados Decimales)</option>
+            <option value="DMS">DMS (Grados, Min, Seg)</option>
+            <option value="UTM">UTM / Plano</option>
+        </select>
+        <span id="labelX" class="coord-label">Long:</span>
+        <input type="text" id="inputLong" placeholder="Ej. -79.90">
+        <span id="labelY" class="coord-label">Lat:</span>
+        <input type="text" id="inputLat" placeholder="Ej. 9.36">
+        <button onclick="irACoordenadasPersonalizadas()">Ir</button>
+    </div>
+</div>
 
         <!-- VENTANA MODAL PERSONALIZADA DE ALERTA DE COORDENADAS -->
         <div id="customModalCoord" class="modal-coord-overlay">
