@@ -140,15 +140,15 @@
 <!-- Widget Flotante de Coordenadas -->
 <div class="coord-widget-container">
     <div class="coord-inputs">
-        <select id="formatoCoordenadas" onchange="cambiarFormatoCoordenadas()">
+        <select id="selectTipoCoord" onchange="cambiarFormatoCoordenadas()">
             <option value="DD">DD (Grados Decimales)</option>
-            <option value="DMS">DMS (Grados, Min, Seg)</option>
-            <option value="UTM">UTM</option> <!-- AQUÍ SE QUITÓ EL "/ Plano" -->
+            <option value="UTM">UTM (WGS84 17N)</option>
+            <option value="DMS">GMS (Grados, Min, Seg)</option>
         </select>
         <span id="labelX" class="coord-label">Long:</span>
-        <input type="text" id="inputLong" placeholder="Ej. -79.90">
+        <input type="text" id="inputLong" placeholder="Ej. -79.90" onkeydown="verificarEnterCoordenadas(event)">
         <span id="labelY" class="coord-label">Lat:</span>
-        <input type="text" id="inputLat" placeholder="Ej. 9.36">
+        <input type="text" id="inputLat" placeholder="Ej. 9.36" onkeydown="verificarEnterCoordenadas(event)">
         <button onclick="irACoordenadasPersonalizadas()">Ir</button>
     </div>
 </div>
