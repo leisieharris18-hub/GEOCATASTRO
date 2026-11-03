@@ -41,17 +41,20 @@ const layerControl = L.control.layers(baseMaps, overlayMaps).addTo(map);
 
 
 // ============================================================================
-// ETAPA 1.5: CARGA DE DATOS GEOJSON DESDE LA NUBE (FINCAS Y CATASTRO)
+// ETAPA 1.5: CARGA Y VALIDACIÓN DE DATOS GEOJSON DESDE LA NUBE
 // ============================================================================
 
 document.addEventListener("DOMContentLoaded", function() {
-    // Cargar Fincas
+    // 1. Cargar Fincas
     fetch('FINCAS.json')
         .then(res => {
             if (!res.ok) throw new Error("No se pudo cargar FINCAS.json");
             return res.json();
         })
-        .then(data => {
+        .then(rawData => {
+            // Convierte automáticamente un arreglo plano en un GeoJSON válido
+            const data = Array.isArray(rawData) ? { type: "FeatureCollection", features: rawData } : rawData;
+            
             datosFincasGlobal = data;
             capaFincasLeaflet = L.geoJSON(data, {
                 style: { color: '#0984e3', weight: 1.5, fillOpacity: 0.2 },
@@ -63,13 +66,16 @@ document.addEventListener("DOMContentLoaded", function() {
         })
         .catch(err => console.error("Error cargando FINCAS.json:", err));
 
-    // Cargar Catastro
+    // 2. Cargar Catastro
     fetch('CATASTRALESC3.json')
         .then(res => {
             if (!res.ok) throw new Error("No se pudo cargar CATASTRALESC3.json");
             return res.json();
         })
-        .then(data => {
+        .then(rawData => {
+            // Convierte automáticamente un arreglo plano en un GeoJSON válido
+            const data = Array.isArray(rawData) ? { type: "FeatureCollection", features: rawData } : rawData;
+            
             datosCatastroGlobal = data;
             capaCatastroLeaflet = L.geoJSON(data, {
                 style: { color: '#00cec9', weight: 1.5, fillOpacity: 0.2 },
@@ -81,7 +87,6 @@ document.addEventListener("DOMContentLoaded", function() {
         })
         .catch(err => console.error("Error cargando CATASTRALESC3.json:", err));
 });
-
 
 // ============================================================================
 // ETAPA 2: INTEGRACIÓN DEL MODO OSCURO (DARK THEME)
