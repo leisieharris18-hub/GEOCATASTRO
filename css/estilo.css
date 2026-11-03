@@ -1156,3 +1156,18 @@ body.dark-mode .sidebar-panel::-webkit-scrollbar-thumb {
 body.dark-mode .sidebar-panel::-webkit-scrollbar-thumb:hover {
     background: #00c4da;
 }
+/* ==========================================================================
+   CORRECCIÓN DE TEXTO EN VISTA DE PLANOS PARA MODO OSCURO
+   ========================================================================== */
+body.dark-mode .card-planos .instruccion,
+body.dark-mode .card-planos .placeholder-text,
+body.dark-mode .viewer-plano span,
+body.dark-mode .viewer-plano div {
+    color: #ffffff !important;
+}
+
+/* Asegurar legibilidad general dentro del panel flotante de atributos en modo oscuro */
+body.dark-mode #attributeFloatingPanel,
+body.dark-mode #attributeFloatingPanel div {
+    color: #e8f6ff;
+}
