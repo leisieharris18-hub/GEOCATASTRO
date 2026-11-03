@@ -370,31 +370,76 @@ window.irACoordenadasPersonalizadas = function() {
         return;
     }
 
+    // 1. FORMATO GRADOS DECIMALES (DD)
     if (formato === 'DD') {
         const lng = parseFloat(valX);
         const lat = parseFloat(valY);
         if (!isNaN(lng) && !isNaN(lat)) {
             map.setView([lat, lng], 18);
-            L.marker([lat, lng]).addTo(map).bindPopup("Coordenada DD Buscada").openPopup();
+            L.marker([lat, lng]).addTo(map).bindPopup(`Coordenada DD: ${lat}, ${lng}`).openPopup();
         } else {
             alert("Ingrese valores numéricos válidos para Grados Decimales.");
         }
     } 
+    // 2. FORMATO UTM (WGS84 / Zona 17N para Panamá)
     else if (formato === 'UTM') {
         const easting = parseFloat(valX);
         const northing = parseFloat(valY);
         if (!isNaN(easting) && !isNaN(northing)) {
-            // Nota: Asegúrate de tener tu función de conversión UTM a LatLon implementada en el proyecto
-            const latLon = utmToLatLon(easting, northing, 17); 
-            map.setView([latLon.lat, latLon.lng], 18);
-            L.marker([latLon.lat, latLon.lng]).addTo(map).bindPopup("Coordenada UTM Buscada").openPopup();
+            try {
+                // Si usas Proj4js para convertir UTM a Lat/Lon (WGS84)
+                // Asegúrate de que la definición de la zona 17N esté disponible en tu proyecto
+                if (typeof proj4 !== 'undefined') {
+                    // EPSG:32617 (WGS 84 / UTM zone 17N) a EPSG:4326 (WGS 84)
+                    const utmProj = "+proj=utm +zone=17 +datum=WGS84 +units=m +no_defs";
+                    const wgs84Proj = "+proj=longlat +datum=WGS84 +no_defs";
+                    const [lng, lat] = proj4(utmProj, wgs84Proj, [easting, northing]);
+
+                    map.setView([lat, lng], 18);
+                    L.marker([lat, lng]).addTo(map).bindPopup(`UTM: ${easting} E, ${northing} N`).openPopup();
+                } else {
+                    // Método alternativo si no usas proj4 directo en esta función pero tienes utmToLatLon
+                    const latLon = utmToLatLon ? utmToLatLon(easting, northing, 17) : null;
+                    if (latLon) {
+                        map.setView([latLon.lat, latLon.lng], 18);
+                        L.marker([latLon.lat, latLon.lng]).addTo(map).bindPopup(`UTM: ${easting} E, ${northing} N`).openPopup();
+                    } else {
+                        alert("No se encontró la función de conversión UTM en el sistema.");
+                    }
+                }
+            } catch (error) {
+                alert("Error al procesar las coordenadas UTM. Verifique los valores.");
+            }
         } else {
-            alert("Ingrese valores numéricos válidos para UTM.");
+            alert("Ingrese valores numéricos válidos para Este y Norte.");
         }
     }
+    // 3. FORMATO GRADOS, MINUTOS, SEGUNDOS (DMS)
     else if (formato === 'DMS') {
-        // Validación básica o parser para formato GMS/DMS si tu script ya cuenta con uno
-        alert("Búsqueda por DMS seleccionada. Asegúrate de procesar la cadena GMS a decimales.");
+        // Función auxiliar interna para parsear cadenas DMS sencillas o numéricas
+        const parseDMS = (dmsStr) => {
+            // Intenta extraer números si viene en formato texto estilo 9°21'36"N o similar
+            const cleanStr = dmsStr.replace(/[^\d.-]/g, ' ');
+            const parts = cleanStr.trim().split(/\s+/).map(Number);
+            if (parts.length >= 3) {
+                let dec = parts[0] + parts[1] / 60 + parts[2] / 3600;
+                if (dmsStr.toUpperCase().includes('S') || dmsStr.toUpperCase().includes('W') || dmsStr.startsWith('-')) {
+                    dec = -dec;
+                }
+                return dec;
+            }
+            return parseFloat(dmsStr);
+        };
+
+        const lng = parseDMS(valX);
+        const lat = parseDMS(valY);
+
+        if (!isNaN(lng) && !isNaN(lat)) {
+            map.setView([lat, lng], 18);
+            L.marker([lat, lng]).addTo(map).bindPopup(`Coordenada GMS Buscada`).openPopup();
+        } else {
+            alert("Formato DMS inválido. Use un formato compatible (ej. 79°54'0\"W).");
+        }
     }
 };
 
