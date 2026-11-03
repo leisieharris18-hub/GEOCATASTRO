@@ -50,7 +50,6 @@ document.addEventListener("DOMContentLoaded", function() {
     // Definir la proyección UTM Zona 17N (utilizada en Panamá) y WGS84
     proj4.defs("EPSG:32617", "+proj=utm +zone=17 +datum=WGS84 +units=m +no_defs");
 
-    // Función para transformar coordenadas de metros a grados y adaptar a Leaflet
     function adaptarFormatoArcGIS(rawData) {
         if (!rawData) return { type: "FeatureCollection", features: [] };
 
@@ -58,13 +57,11 @@ document.addEventListener("DOMContentLoaded", function() {
             let geometriaConvertida = null;
 
             if (f.geometry && f.geometry.rings) {
-                // Transformar cada anillo de coordenadas UTM [X, Y] a [Longitud, Latitud]
                 const ringsTransformados = f.geometry.rings.map(ring => {
                     return ring.map(coord => {
-                        // Si los números son grandes (> 180 o > 90), asumimos que son metros (UTM)
                         if (Math.abs(coord[0]) > 180 || Math.abs(coord[1]) > 90) {
                             const conv = proj4("EPSG:32617", "EPSG:4326", [coord[0], coord[1]]);
-                            return [conv[0], conv[1]]; // [Longitud, Latitud]
+                            return [conv[0], conv[1]];
                         }
                         return coord;
                     });
@@ -86,7 +83,7 @@ document.addEventListener("DOMContentLoaded", function() {
         return { type: "FeatureCollection", features: featuresConvertidas };
     }
 
-// 1. Cargar Catastro (Capa inferior de respaldo)
+    // 1. Cargar Catastro (Capa inferior con borde celeste y sin relleno)
     fetch('CATASTRALESC3.json')
         .then(res => {
             if (!res.ok) throw new Error("No se pudo cargar CATASTRALESC3.json");
@@ -97,7 +94,7 @@ document.addEventListener("DOMContentLoaded", function() {
             datosCatastroGlobal = dataLimpia;
             
             capaCatastroLeaflet = L.geoJSON(dataLimpia, {
-                style: { color: '#00cec9', weight: 2, fillOpacity: 0.3 }, // <--- AQUÍ ESTÁ EL CAMBIO
+                style: { color: '#00cec9', weight: 2, fillOpacity: 0, fill: false },
                 onEachFeature: function(feature, layer) {
                     configurarClickAtributos(layer, 'catastro');
                 }
@@ -118,17 +115,21 @@ document.addEventListener("DOMContentLoaded", function() {
             datosFincasGlobal = dataLimpia;
             
             capaFincasLeaflet = L.geoJSON(dataLimpia, {
-                style: { color: '#e67e22', weight: 2, fillOpacity: 0.3 }, // Estilo anaranjado
+                style: { color: '#e67e22', weight: 2, fillOpacity: 0.3 },
                 onEachFeature: function(feature, layer) {
                     configurarClickAtributos(layer, 'fincas');
                 }
             }).addTo(map);
             
-            // Forzar que Fincas esté siempre al frente de los clics
             capaFincasLeaflet.bringToFront();
             layerControl.addOverlay(capaFincasLeaflet, "Fincas");
         })
         .catch(err => console.error("Error en FINCAS:", err));
+
+    // Forzar el redibujado de Leaflet tras cargar el DOM para evitar pantallas en blanco
+    setTimeout(function() {
+        if (map) map.invalidateSize();
+    }, 250);
 });
 
 
@@ -309,7 +310,6 @@ function generarPopupCoordenadasHtml(lat, lng) {
         contenidoFormato = `<b>GMS:</b> ${textoCopiar}`;
     }
 
-    // Detectar si el modo oscuro está activo para cambiar el color de la nota informativa
     const esDarkMode = document.body.classList.contains('dark-mode');
     const colorNota = esDarkMode ? '#ffffff' : '#555555';
     const colorBordeNota = esDarkMode ? '#555555' : '#dddddd';
@@ -324,6 +324,7 @@ function generarPopupCoordenadasHtml(lat, lng) {
         </div>
     `;
 }
+
 const CoordsControl = L.Control.extend({
     options: { position: 'topleft' },
     onAdd: function(map) {
@@ -396,19 +397,6 @@ window.cambiarFormatoCoordenadas = function() {
         if(inputLat) inputLat.placeholder = 'Ej. 990000';
     }
 };
-
-document.addEventListener("DOMContentLoaded", function() {
-    ['inputLong', 'inputLat'].forEach(id => {
-        const el = document.getElementById(id);
-        if (el) {
-            el.addEventListener('keydown', function(e) {
-                if (e.key === 'Enter') {
-                    window.irACoordenadasPersonalizadas();
-                }
-            });
-        }
-    });
-});
 
 window.irACoordenadasPersonalizadas = function() {
     const selectEl = document.getElementById('selectTipoCoord') || document.getElementById('formatoCoordenadas');
@@ -568,7 +556,6 @@ window.buscarPlanoManual = function() {
         const placeholder = document.getElementById('textoPlanoPlaceholder');
         
         if (imgElement && placeholder) {
-            // Intenta primero en la carpeta general con .jpg
             const rutaImagen = RUTA_PLANOS_GENERAL + numPlano + ".jpg";
             
             imgElement.style.display = 'block';
@@ -576,7 +563,6 @@ window.buscarPlanoManual = function() {
             imgElement.src = rutaImagen;
             imgElement.onclick = () => window.open(imgElement.src, '_blank');
             
-            // Si falla en la general, busca automáticamente en la de Barrio Norte con .jpg
             imgElement.onerror = function() {
                 this.src = RUTA_PLANOS_BARRIO_NORTE + numPlano + ".jpg";
                 this.onerror = function() {
@@ -588,6 +574,7 @@ window.buscarPlanoManual = function() {
         }
     }
 };
+
 
 // ============================================================================
 // ETAPA 9: INTERACCIÓN Y PANEL FLOTANTE DE ATRIBUTOS (CLIC EN MAPA)
@@ -652,6 +639,7 @@ function configurarClickAtributos(layer, tipoOrigen) {
     });
 }
 
+
 // ============================================================================
 // ETAPA 10: MANEJO DEL PANEL FLOTANTE (DRAG & DROP Y CIERRE)
 // ============================================================================
@@ -702,12 +690,13 @@ document.addEventListener('DOMContentLoaded', function() {
         document.addEventListener('mouseup', () => { isDragging = false; });
     }
 });
+
+
 // ============================================================================
 // ETAPA 11: SOPORTE GLOBAL DE TECLA ENTER PARA BÚSQUEDAS
 // ============================================================================
 
 document.addEventListener("DOMContentLoaded", function() {
-    // Escuchar Enter en los inputs de Gestión Catastral (Finca, Tomo, Folio, Propietario, etc.)
     const inputsCatastro = ['inputFinca', 'inputTomo', 'inputFolio', 'inputUbicacion', 'inputPropietario'];
     inputsCatastro.forEach(id => {
         const el = document.getElementById(id);
@@ -723,7 +712,6 @@ document.addEventListener("DOMContentLoaded", function() {
         }
     });
 
-    // Escuchar Enter en el buscador manual de planos
     const inputPlano = document.getElementById('inputPlanoSearch');
     if (inputPlano) {
         inputPlano.addEventListener('keydown', function(e) {
@@ -735,4 +723,18 @@ document.addEventListener("DOMContentLoaded", function() {
             }
         });
     }
+
+    ['inputLong', 'inputLat'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) {
+            el.addEventListener('keydown', function(e) {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    if (typeof window.irACoordenadasPersonalizadas === 'function') {
+                        window.irACoordenadasPersonalizadas();
+                    }
+                }
+            });
+        }
+    });
 });
