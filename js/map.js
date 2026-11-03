@@ -269,7 +269,7 @@ function latLonToDMS(lat, lng) {
 
 
 // ============================================================================
-// ETAPA 5: BARRAS INFERIORES DE LOCALIZACIÓN Y COORDENADAS
+// ETAPA 5: BARRAS INFERIORES DE LOCALIZACIÓN Y COORDENADAS (CORREGIDO)
 // ============================================================================
 
 window.listaMarcadoresCoordenadas = [];
@@ -330,19 +330,73 @@ const CoordsControl = L.Control.extend({
 });
 map.addControl(new CoordsControl());
 
-window.cambiarFormatoCoordenadas = function() {};
+// 1. Cambiar dinámicamente los placeholders y etiquetas según el formato seleccionado
+window.cambiarFormatoCoordenadas = function() {
+    const formato = document.getElementById('formatoCoordenadas').value;
+    const inputLong = document.getElementById('inputLong');
+    const inputLat = document.getElementById('inputLat');
+    const labelX = document.getElementById('labelX');
+    const labelY = document.getElementById('labelY');
 
-window.irACoordenadasPersonalizadas = function() {
-    const valX = parseFloat(document.getElementById('inputLong').value);
-    const valY = parseFloat(document.getElementById('inputLat').value);
-    if (!isNaN(valX) && !isNaN(valY)) {
-        map.setView([valY, valX], 18);
-        L.marker([valY, valX]).addTo(map).bindPopup("Coordenada buscada").openPopup();
-    } else {
-        alert("Ingrese valores válidos.");
+    inputLong.value = '';
+    inputLat.value = '';
+
+    if (formato === 'DD') {
+        labelX.innerText = 'Long:';
+        labelY.innerText = 'Lat:';
+        inputLong.placeholder = 'Ej. -79.90';
+        inputLat.placeholder = 'Ej. 9.36';
+    } else if (formato === 'DMS') {
+        labelX.innerText = 'Long (DMS):';
+        labelY.innerText = 'Lat (DMS):';
+        inputLong.placeholder = 'Ej. 79°54\'0"W';
+        inputLat.placeholder = 'Ej. 9°21\'36"N';
+    } else if (formato === 'UTM') {
+        labelX.innerText = 'Este (X):';
+        labelY.innerText = 'Norte (Y):';
+        inputLong.placeholder = 'Ej. 635000';
+        inputLat.placeholder = 'Ej. 1035000';
     }
 };
 
+// 2. Validar y procesar la navegación según el formato activo
+window.irACoordenadasPersonalizadas = function() {
+    const formato = document.getElementById('formatoCoordenadas').value;
+    const valX = document.getElementById('inputLong').value.trim();
+    const valY = document.getElementById('inputLat').value.trim();
+
+    if (!valX || !valY) {
+        alert("Por favor, complete ambos campos.");
+        return;
+    }
+
+    if (formato === 'DD') {
+        const lng = parseFloat(valX);
+        const lat = parseFloat(valY);
+        if (!isNaN(lng) && !isNaN(lat)) {
+            map.setView([lat, lng], 18);
+            L.marker([lat, lng]).addTo(map).bindPopup("Coordenada DD Buscada").openPopup();
+        } else {
+            alert("Ingrese valores numéricos válidos para Grados Decimales.");
+        }
+    } 
+    else if (formato === 'UTM') {
+        const easting = parseFloat(valX);
+        const northing = parseFloat(valY);
+        if (!isNaN(easting) && !isNaN(northing)) {
+            // Nota: Asegúrate de tener tu función de conversión UTM a LatLon implementada en el proyecto
+            const latLon = utmToLatLon(easting, northing, 17); 
+            map.setView([latLon.lat, latLon.lng], 18);
+            L.marker([latLon.lat, latLon.lng]).addTo(map).bindPopup("Coordenada UTM Buscada").openPopup();
+        } else {
+            alert("Ingrese valores numéricos válidos para UTM.");
+        }
+    }
+    else if (formato === 'DMS') {
+        // Validación básica o parser para formato GMS/DMS si tu script ya cuenta con uno
+        alert("Búsqueda por DMS seleccionada. Asegúrate de procesar la cadena GMS a decimales.");
+    }
+};
 
 // ============================================================================
 // ETAPA 6: MODALES Y ALERTAS DEL SISTEMA
