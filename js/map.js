@@ -611,8 +611,9 @@ window.buscarCatastro = function() {
     if (encontrados.length > 0) {
         if (capaSeleccionadaGeoJSON) map.removeLayer(capaSeleccionadaGeoJSON);
         
+        // Asignar un estilo translúcido ligero o transparente para que no sature visualmente el mapa en bloque
         capaSeleccionadaGeoJSON = L.geoJSON({ type: "FeatureCollection", features: encontrados }, {
-            style: { color: '#ff007f', weight: 4, fillOpacity: 0.4 }
+            style: { color: '#ff007f', weight: 2, fillOpacity: 0.1, fill: true }
         }).addTo(map);
 
         map.fitBounds(capaSeleccionadaGeoJSON.getBounds(), { padding: [50, 50] });
