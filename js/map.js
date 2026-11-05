@@ -510,8 +510,6 @@ function mostrarAlertaCatastro(mensaje, tipo) {
     }
 }
 
-
-// ============================================================================
 // ============================================================================
 // ETAPA 7: MÓDULO LATERAL DE GESTIÓN CATASTRAL (BÚSQUEDA Y LIMPIEZA TOTAL)
 // ============================================================================
@@ -610,31 +608,61 @@ window.limpiarFiltroCatastro = function() {
 
 window.buscarPlanoManual = function() {
     const input = document.getElementById('inputPlanoSearch');
-    if(input && input.value.trim() !== "") {
-        const numPlano = input.value.trim();
-        const imgElement = document.getElementById('planoImg');
-        const placeholder = document.getElementById('textoPlanoPlaceholder');
-        
-        if (imgElement && placeholder) {
-            const rutaImagen = RUTA_PLANOS_GENERAL + numPlano + ".jpg";
-            
-            imgElement.style.display = 'block';
-            placeholder.style.display = 'none';
-            imgElement.src = rutaImagen;
-            imgElement.onclick = () => window.open(imgElement.src, '_blank');
-            
-            imgElement.onerror = function() {
-                this.src = RUTA_PLANOS_BARRIO_NORTE + numPlano + ".jpg";
-                this.onerror = function() {
-                    this.style.display = 'none';
-                    placeholder.style.display = 'block';
-                    placeholder.innerText = "⚠️ Plano no encontrado en las carpetas";
-                };
-            };
+    const imgElement = document.getElementById('planoImg');
+    const placeholder = document.getElementById('textoPlanoPlaceholder');
+
+    if (!input) return;
+
+    const valorInput = input.value.trim();
+
+    // Si el usuario borró todo y presiona buscar o está vacío
+    if (valorInput === "") {
+        if (imgElement) imgElement.style.display = 'none';
+        if (placeholder) {
+            placeholder.style.display = 'block';
+            placeholder.innerText = "Vista previa del plano"; // Restablece el texto original
         }
+        return;
+    }
+
+    // Lógica de búsqueda normal si hay texto
+    if (imgElement && placeholder) {
+        const rutaImagen = RUTA_PLANOS_GENERAL + valorInput + ".jpg";
+        
+        imgElement.style.display = 'block';
+        placeholder.style.display = 'none';
+        imgElement.src = rutaImagen;
+        imgElement.onclick = () => window.open(imgElement.src, '_blank');
+        
+        imgElement.onerror = function() {
+            this.src = RUTA_PLANOS_BARRIO_NORTE + valorInput + ".jpg";
+            this.onerror = function() {
+                this.style.display = 'none';
+                placeholder.style.display = 'block';
+                placeholder.innerText = "⚠️ Plano no encontrado en las carpetas";
+            };
+        };
     }
 };
 
+// Escuchador automático para restablecer la vista cuando el usuario borre el texto con el teclado
+document.addEventListener("DOMContentLoaded", function() {
+    const inputPlano = document.getElementById('inputPlanoSearch');
+    if (inputPlano) {
+        inputPlano.addEventListener('input', function() {
+            if (this.value.trim() === "") {
+                const imgElement = document.getElementById('planoImg');
+                const placeholder = document.getElementById('textoPlanoPlaceholder');
+                
+                if (imgElement) imgElement.style.display = 'none';
+                if (placeholder) {
+                    placeholder.style.display = 'block';
+                    placeholder.innerText = "Vista previa del plano"; // Vuelve al estado inicial inmediatamente
+                }
+            }
+        });
+    }
+});
 
 // ============================================================================
 // ETAPA 9: INTERACCIÓN Y PANEL FLOTANTE DE ATRIBUTOS (CLIC EN MAPA)
