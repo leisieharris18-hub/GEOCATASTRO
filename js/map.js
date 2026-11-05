@@ -578,9 +578,11 @@ function mostrarAlertaCatastro(mensaje, tipo) {
 // ============================================================================
 
 window.buscarCatastro = function() {
-    const finca = document.getElementById('inputFinca') ? document.getElementById('inputFinca').value.trim().toLowerCase() : '';
-    const tomo = document.getElementById('inputTomo') ? document.getElementById('inputTomo').value.trim().toLowerCase() : '';
-    const folio = document.getElementById('inputFolio') ? document.getElementById('inputFolio').value.trim().toLowerCase() : '';
+    // Obtenemos los valores ingresados y eliminamos espacios en blanco
+    const finca = document.getElementById('inputFinca') ? document.getElementById('inputFinca').value.trim() : '';
+    const tomo = document.getElementById('inputTomo') ? document.getElementById('inputTomo').value.trim() : '';
+    const folio = document.getElementById('inputFolio') ? document.getElementById('inputFolio').value.trim() : '';
+    const ubicacion = document.getElementById('inputUbicacion') ? document.getElementById('inputUbicacion').value.trim() : '';
     const propietario = document.getElementById('inputPropietario') ? document.getElementById('inputPropietario').value.trim().toLowerCase() : '';
 
     if (!datosFincasGlobal && !datosCatastroGlobal) {
@@ -593,15 +595,23 @@ window.buscarCatastro = function() {
         if (dataset && dataset.features) {
             const matches = dataset.features.filter(f => {
                 const p = f.properties || {};
-                const fInc = String(p.FINCA || p.finca || '').toLowerCase();
-                const tOm = String(p.TOMO || p.tomo || '').toLowerCase();
-                const fOl = String(p.FOLIO || p.folio || '').toLowerCase();
+                
+                // Convertir cada atributo a string limpio (manejando nulos o vacíos)
+                const fInc = String(p.FINCA || p.finca || '').trim();
+                const tOm = String(p.TOMO || p.tomo || '').trim();
+                const fOl = String(p.FOLIO || p.folio || '').trim();
+                const uBi = String(p.COD_UBICACION || p.codigo_ubicacion || '').trim();
                 const pRo = String(p.PROPIETARIO || p.propietario || '').toLowerCase();
 
-                return (finca === '' || fInc.includes(finca)) &&
-                       (tomo === '' || tOm.includes(tomo)) &&
-                       (folio === '' || fOl.includes(folio)) &&
-                       (propietario === '' || pRo.includes(propietario));
+                // Validación estricta de secuencia exacta consecutiva (.includes)
+                const cumpleFinca = (finca === '' || fInc.includes(finca));
+                const cumpleTomo = (tomo === '' || tOm.includes(tomo));
+                const cumpleFolio = (folio === '' || fOl.includes(folio));
+                const cumpleUbicacion = (ubicacion === '' || uBi.includes(ubicacion));
+                const cumplePropietario = (propietario === '' || pRo.includes(propietario));
+
+                // El predio se selecciona únicamente si cumple con todos los filtros rellenados
+                return cumpleFinca && cumpleTomo && cumpleFolio && cumpleUbicacion && cumplePropietario;
             });
             encontrados = encontrados.concat(matches);
         }
@@ -620,49 +630,6 @@ window.buscarCatastro = function() {
         mostrarAlertaCatastro("Sin coincidencias encontradas.", "error");
     }
 };
-
-window.limpiarFiltroCatastro = function() {
-    // 1. Vaciar campos de texto
-    ['inputFinca', 'inputTomo', 'inputFolio', 'inputUbicacion', 'inputPropietario'].forEach(id => {
-        const el = document.getElementById(id); 
-        if (el) el.value = '';
-    });
-
-    // 2. Remover capa de búsqueda general
-    if (capaSeleccionadaGeoJSON) {
-        map.removeLayer(capaSeleccionadaGeoJSON);
-        capaSeleccionadaGeoJSON = null;
-    }
-
-    // 3. Restablecer el estilo y deseleccionar el predio marcado por clic individual
-    if (typeof capaPredioClicSeleccionado !== 'undefined' && capaPredioClicSeleccionado) {
-        if (typeof capaPredioClicSeleccionado.setStyle === 'function') {
-            capaPredioClicSeleccionado.setStyle({ color: '#e67e22', weight: 2, fillOpacity: 0.3 });
-        }
-        capaPredioClicSeleccionado = null;
-    }
-
-    // 4. Limpiar marcadores de coordenadas y cerrar paneles
-    if (window.listaMarcadoresCoordenadas && window.listaMarcadoresCoordenadas.length > 0) {
-        window.listaMarcadoresCoordenadas.forEach(marker => {
-            if (marker && map.hasLayer(marker)) map.removeLayer(marker);
-        });
-        window.listaMarcadoresCoordenadas = [];
-    }
-    marcadorActivoActual = null;
-
-    map.closePopup();
-
-    const panelAtributos = document.getElementById('attributeFloatingPanel');
-    if (panelAtributos) panelAtributos.style.display = 'none';
-
-    const panelCoord = document.getElementById('coordFloatingPanel');
-    if (panelCoord) panelCoord.style.display = 'none';
-
-    const panelSV = document.getElementById('streetViewPanel');
-    if (panelSV) panelSV.style.display = 'none';
-};
-
 
 // ============================================================================
 // ETAPA 8: MÓDULO DE CONSULTA DE PLANOS
