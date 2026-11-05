@@ -578,11 +578,10 @@ function mostrarAlertaCatastro(mensaje, tipo) {
 // ============================================================================
 
 window.buscarCatastro = function() {
-    // Obtenemos los valores ingresados y eliminamos espacios en blanco
-    const finca = document.getElementById('inputFinca') ? document.getElementById('inputFinca').value.trim() : '';
-    const tomo = document.getElementById('inputTomo') ? document.getElementById('inputTomo').value.trim() : '';
-    const folio = document.getElementById('inputFolio') ? document.getElementById('inputFolio').value.trim() : '';
-    const ubicacion = document.getElementById('inputUbicacion') ? document.getElementById('inputUbicacion').value.trim() : '';
+    const finca = document.getElementById('inputFinca') ? document.getElementById('inputFinca').value.trim().toLowerCase() : '';
+    const tomo = document.getElementById('inputTomo') ? document.getElementById('inputTomo').value.trim().toLowerCase() : '';
+    const folio = document.getElementById('inputFolio') ? document.getElementById('inputFolio').value.trim().toLowerCase() : '';
+    const ubicacion = document.getElementById('inputUbicacion') ? document.getElementById('inputUbicacion').value.trim().toLowerCase() : '';
     const propietario = document.getElementById('inputPropietario') ? document.getElementById('inputPropietario').value.trim().toLowerCase() : '';
 
     if (!datosFincasGlobal && !datosCatastroGlobal) {
@@ -596,22 +595,21 @@ window.buscarCatastro = function() {
             const matches = dataset.features.filter(f => {
                 const p = f.properties || {};
                 
-                // Extraer valores contemplando múltiples posibles nombres de campos en el JSON
-                const fInc = String(p.FINCA || p.finca || '').trim();
-                const tOm = String(p.TOMO || p.tomo || '').trim();
-                const fOl = String(p.FOLIO || p.folio || '').trim();
+                // Buscar todas las variantes posibles de nombres de campos en el GeoJSON (minúsculas y mayúsculas)
+                const fInc = String(p.FINCA || p.finca || '').trim().toLowerCase();
+                const tOm = String(p.TOMO || p.tomo || '').trim().toLowerCase();
+                const fOl = String(p.FOLIO || p.folio || '').trim().toLowerCase();
                 
-                // Evaluar todas las posibles variantes para la ubicación
+                // Mapear todas las posibles variantes de el campo de ubicación
                 const uBi = String(
-                    p.COD_UBICACION || 
-                    p.codigo_ubicacion || 
-                    p.UBICACION || 
-                    p.ubicacion || 
-                    p.COD_UBICA || 
-                    p.cod_ubicacion || ''
-                ).trim();
+                    p.CODIGO_UBICACION || p.codigo_ubicacion || 
+                    p.COD_UBICACION || p.cod_ubicacion || 
+                    p.UBICACION || p.ubicacion || 
+                    p.COD_UBICA || p.cod_ubica ||
+                    p.CODIGO || p.codigo || ''
+                ).trim().toLowerCase();
 
-                const pRo = String(p.PROPIETARIO || p.propietario || '').toLowerCase();
+                const pRo = String(p.PROPIETARIO || p.propietario || '').trim().toLowerCase();
 
                 // Validación de secuencia exacta consecutiva (.includes)
                 const cumpleFinca = (finca === '' || fInc.includes(finca));
