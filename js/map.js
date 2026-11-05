@@ -512,7 +512,8 @@ function mostrarAlertaCatastro(mensaje, tipo) {
 
 
 // ============================================================================
-// ETAPA 7: MÓDULO LATERAL DE GESTIÓN CATASTRAL (BÚSQUEDA)
+// ============================================================================
+// ETAPA 7: MÓDULO LATERAL DE GESTIÓN CATASTRAL (BÚSQUEDA Y LIMPIEZA TOTAL)
 // ============================================================================
 
 window.buscarCatastro = function() {
@@ -560,14 +561,49 @@ window.buscarCatastro = function() {
 };
 
 window.limpiarFiltroCatastro = function() {
+    // 1. Limpiar campos de texto del formulario de búsqueda
     ['inputFinca', 'inputTomo', 'inputFolio', 'inputUbicacion', 'inputPropietario'].forEach(id => {
-        const el = document.getElementById(id); if(el) el.value = '';
+        const el = document.getElementById(id); 
+        if(el) el.value = '';
     });
-    if (capaSeleccionadaGeoJSON) map.removeLayer(capaSeleccionadaGeoJSON);
-    document.getElementById('attributeFloatingPanel').style.display = 'none';
+
+    // 2. Remover la capa de resultados de búsqueda seleccionados
+    if (capaSeleccionadaGeoJSON) {
+        map.removeLayer(capaSeleccionadaGeoJSON);
+        capaSeleccionadaGeoJSON = null;
+    }
+
+    // 3. AGREGADO: Remover capa temporal de clics si existe
+    if (typeof capaClicTemporal !== 'undefined' && capaClicTemporal) {
+        map.removeLayer(capaClicTemporal);
+        capaClicTemporal = null;
+    }
+
+    // 4. AGREGADO: Eliminar todos los pines y marcadores de coordenadas creados en el mapa
+    if (window.listaMarcadoresCoordenadas && window.listaMarcadoresCoordenadas.length > 0) {
+        window.listaMarcadoresCoordenadas.forEach(marker => {
+            if (marker && map.hasLayer(marker)) {
+                map.removeLayer(marker);
+            }
+        });
+        window.listaMarcadoresCoordenadas = [];
+    }
+
+    // 5. AGREGADO: Cerrar popups activos en el mapa
+    map.closePopup();
+
+    // 6. Ocultar paneles flotantes (Atributos y Street View)
+    const panelAtributos = document.getElementById('attributeFloatingPanel');
+    if (panelAtributos) panelAtributos.style.display = 'none';
+
+    const panelSV = document.getElementById('streetViewPanel');
+    if (panelSV) panelSV.style.display = 'none';
+
+    // 7. Ocultar cualquier alerta flotante activa
+    const alertaDiv = document.getElementById('alertaCatastro');
+    if (alertaDiv) alertaDiv.style.display = 'none';
 };
-
-
+                
 // ============================================================================
 // ETAPA 8: MÓDULO DE CONSULTA DE PLANOS
 // ============================================================================
