@@ -571,13 +571,13 @@ window.limpiarFiltroCatastro = function() {
         capaSeleccionadaGeoJSON = null;
     }
 
-    // 3. AGREGADO: Remover capa temporal de clics si existe
+    // 3. Remover capa temporal de clics si existe
     if (typeof capaClicTemporal !== 'undefined' && capaClicTemporal) {
         map.removeLayer(capaClicTemporal);
         capaClicTemporal = null;
     }
 
-    // 4. AGREGADO: Eliminar todos los pines y marcadores de coordenadas creados en el mapa
+    // 4. Eliminar todos los pines y marcadores de coordenadas creados en el mapa
     if (window.listaMarcadoresCoordenadas && window.listaMarcadoresCoordenadas.length > 0) {
         window.listaMarcadoresCoordenadas.forEach(marker => {
             if (marker && map.hasLayer(marker)) {
@@ -587,7 +587,7 @@ window.limpiarFiltroCatastro = function() {
         window.listaMarcadoresCoordenadas = [];
     }
 
-    // 5. AGREGADO: Cerrar popups activos en el mapa
+    // 5. Cerrar popups activos en el mapa
     map.closePopup();
 
     // 6. Ocultar paneles flotantes (Atributos y Street View)
@@ -601,7 +601,8 @@ window.limpiarFiltroCatastro = function() {
     const alertaDiv = document.getElementById('alertaCatastro');
     if (alertaDiv) alertaDiv.style.display = 'none';
 };
-                
+
+
 // ============================================================================
 // ETAPA 8: MÓDULO DE CONSULTA DE PLANOS
 // ============================================================================
@@ -615,12 +616,12 @@ window.buscarPlanoManual = function() {
 
     const valorInput = input.value.trim();
 
-    // Si el usuario borró todo y presiona buscar o está vacío
+    // Si está vacío al momento de presionar buscar
     if (valorInput === "") {
         if (imgElement) imgElement.style.display = 'none';
         if (placeholder) {
             placeholder.style.display = 'block';
-            placeholder.innerText = "Vista previa del plano"; // Restablece el texto original
+            placeholder.innerText = "Vista previa del plano";
         }
         return;
     }
@@ -645,7 +646,7 @@ window.buscarPlanoManual = function() {
     }
 };
 
-// Escuchador automático para restablecer la vista cuando el usuario borre el texto con el teclado
+// Detector automático para limpiar el visor de planos cuando el usuario borre el texto
 document.addEventListener("DOMContentLoaded", function() {
     const inputPlano = document.getElementById('inputPlanoSearch');
     if (inputPlano) {
@@ -657,7 +658,7 @@ document.addEventListener("DOMContentLoaded", function() {
                 if (imgElement) imgElement.style.display = 'none';
                 if (placeholder) {
                     placeholder.style.display = 'block';
-                    placeholder.innerText = "Vista previa del plano"; // Vuelve al estado inicial inmediatamente
+                    placeholder.innerText = "Vista previa del plano";
                 }
             }
         });
