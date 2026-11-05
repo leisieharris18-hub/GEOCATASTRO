@@ -756,23 +756,28 @@ let capaPredioClicSeleccionado = null;
 
 function configurarClickAtributos(layer, tipoOrigen) {
     layer.on('click', function(e) {
-        // Detener la propagación para que el clic no afecte al mapa base
         L.DomEvent.stopPropagation(e);
 
-        // Si ya había un predio seleccionado, restaurar su color original según su capa de origen
+        // Si ya había un predio seleccionado previamente, restaurar su color original exacto según su origen
         if (capaPredioClicSeleccionado) {
             if (typeof capaPredioClicSeleccionado.setStyle === 'function') {
-                const propsAnteriores = capaPredioClicSeleccionado.feature.properties || {};
-                const esFinca = propsAnteriores.FINCA || propsAnteriores.finca;
-                if (esFinca) {
-                    capaPredioClicSeleccionado.setStyle({ color: '#e67e22', weight: 2, fillOpacity: 0.3 });
+                // Verificamos estrictamente a qué capa pertenecía el predio anterior
+                const esFincaAnterior = capaPredioClicSeleccionado.feature && (
+                    capaPredioClicSeleccionado.feature.properties.FINCA || 
+                    capaPredioClicSeleccionado.feature.properties.finca
+                );
+
+                if (esFincaAnterior) {
+                    // Restaurar a naranja original de Fincas
+                    capaPredioClicSeleccionado.setStyle({ color: '#e67e22', weight: 2, fillOpacity: 0.3, fill: true });
                 } else {
+                    // Restaurar a celeste original de Catastro
                     capaPredioClicSeleccionado.setStyle({ color: '#00cec9', weight: 2, fillOpacity: 0.1, fill: true });
                 }
             }
         }
 
-        // Seleccionar el nuevo predio y resaltarlo en color rosado brillante
+        // Marcar el nuevo predio seleccionado y pintarlo de rosado brillante
         capaPredioClicSeleccionado = e.target;
         if (typeof capaPredioClicSeleccionado.setStyle === 'function') {
             capaPredioClicSeleccionado.setStyle({ color: '#ff007f', weight: 4, fillOpacity: 0.5, fill: true });
@@ -784,7 +789,7 @@ function configurarClickAtributos(layer, tipoOrigen) {
         const props = e.target.feature.properties || {};
         const centroide = (typeof e.target.getBounds === 'function') ? e.target.getBounds().getCenter() : e.latlng;
 
-        // Lectura de atributos compatible con ambas tablas (fincas y catastro)
+        // Lectura de atributos segura (sin Shape_Area)
         const finca = props.FINCA || props.finca || '-';
         const tomo = props.TOMO || props.tomo || '-';
         const folio = props.FOLIO || props.folio || '-';
@@ -796,7 +801,6 @@ function configurarClickAtributos(layer, tipoOrigen) {
         let nombrePlanoLimpio = planoVal !== '-' ? String(planoVal).split(/[\\/]/).pop().replace(/\.[^/.]+$/, "").trim() + ".jpg" : '-';
         let carpetaSeleccionada = (tipoOrigen === 'fincas') ? RUTA_PLANOS_BARRIO_NORTE : RUTA_PLANOS_GENERAL; 
 
-        // Generar la tabla HTML para el panel flotante
         const contenidoHtml = `
             <table style="width: 100%; border-collapse: collapse; font-size: 11px; margin-bottom: 10px; color: #333;">
                 <thead><tr><th style="padding:4px; background:#dfe6e9;">Campo</th><th style="padding:4px; background:#dfe6e9;">Valor (${tipoOrigen.toUpperCase()})</th></tr></thead>
@@ -823,7 +827,6 @@ function configurarClickAtributos(layer, tipoOrigen) {
             </div>
         `;
 
-        // Mostrar el panel flotante de atributos con los datos correspondientes
         const panel = document.getElementById('attributeFloatingPanel');
         const bodyContent = document.getElementById('attributePanelBody');
         if (panel && bodyContent) {
