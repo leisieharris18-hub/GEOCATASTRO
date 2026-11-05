@@ -135,7 +135,7 @@ document.addEventListener("DOMContentLoaded", function() {
 
 
 // ============================================================================
-// ETAPA 2: INTEGRACIÓN DEL MODO OSCURO (DARK THEME)
+// ETAPA 2: INTEGRACIÓN DEL MODO OSCURO (DARK THEME) Y EVENTO DINÁMICO
 // ============================================================================
 
 document.addEventListener("DOMContentLoaded", function() {
@@ -154,6 +154,14 @@ document.addEventListener("DOMContentLoaded", function() {
             } else {
                 document.body.classList.remove("dark-mode");
                 localStorage.setItem("geo_dark_mode", "false");
+            }
+
+            // Refrescar automáticamente el panel de coordenadas activo si está desplegado
+            if (marcadorActivoActual) {
+                const coordPanel = document.getElementById('coordFloatingPanel');
+                if (coordPanel && coordPanel.style.display !== 'none') {
+                    window.abrirPanelCoordenadasParaMarcador(marcadorActivoActual);
+                }
             }
         });
     }
@@ -239,7 +247,7 @@ map.addControl(new StreetViewControl());
 
 
 // ============================================================================
-// ETAPA 4: HERRAMIENTAS GEODÉSICAS Y CONVERSIONES (UTM / GMS / DD)
+// ETAPA 4: HERRAMIENTAS GEODÉSICAS Y CONVERSIONES (SIN N/S/E/O Y SIGNOS PREDOMINANTES)
 // ============================================================================
 
 function latLonToUTM(lat, lon, zone = 17) {
@@ -257,15 +265,18 @@ function latLonToUTM(lat, lon, zone = 17) {
     return { easting: easting.toFixed(2), northing: northing.toFixed(2) };
 }
 
+// Conversión a GMS sin letras N,S,E,O (unicamente signos + y -)
 function latLonToDMS(lat, lng) {
-    function convert(coord, isLat) {
-        const abs = Math.abs(coord); const deg = Math.floor(abs);
-        const minNot = (abs - deg) * 60; const min = Math.floor(minNot);
+    function convert(coord) {
+        const sign = coord < 0 ? "-" : "+";
+        const abs = Math.abs(coord); 
+        const deg = Math.floor(abs);
+        const minNot = (abs - deg) * 60; 
+        const min = Math.floor(minNot);
         const sec = ((minNot - min) * 60).toFixed(2);
-        const dir = isLat ? (coord >= 0 ? "N" : "S") : (coord >= 0 ? "E" : "O");
-        return `${deg}° ${min}' ${sec}" ${dir}`;
+        return `${sign}${deg}° ${min}' ${sec}"`;
     }
-    return { latDMS: convert(lat, true), lngDMS: convert(lng, false) };
+    return { latDMS: convert(lat), lngDMS: convert(lng) };
 }
 
 function mostrarModalAlertaCoordenadas(mensajePersonalizado) {
@@ -286,13 +297,15 @@ window.cerrarModalCoordenadas = function() {
 
 
 // ============================================================================
-// ETAPA 5: BARRAS INFERIORES, POPUP DINÁMICO Y BÚSQUEDA MANUAL
+// ETAPA 5: BARRAS INFERIORES, PANEL FLOTANTE DE COORDENADAS Y MARCADORES
 // ============================================================================
 
 window.listaMarcadoresCoordenadas = [];
+let marcadorActivoActual = null; // Guarda el marcador que tiene abierto el panel actualmente
 
-// Función para generar el contenido del popup según el formato seleccionado
-function generarPopupCoordenadasHtml(lat, lng) {
+// Función para generar el contenido HTML del panel flotante de coordenadas
+// Orden estricto: Primero Longitud, Segundo Latitud. Sin letras N,S,E,O.
+function generarContenidoPanelCoordenadas(lat, lng) {
     const selectEl = document.getElementById('selectTipoCoord') || document.getElementById('formatoCoordenadas');
     const formato = selectEl ? selectEl.value.toUpperCase() : 'DD';
 
@@ -300,32 +313,45 @@ function generarPopupCoordenadasHtml(lat, lng) {
     let textoCopiar = '';
 
     if (formato === 'DD') {
-        textoCopiar = `${lat.toFixed(6)}, ${lng.toFixed(6)}`;
-        contenidoFormato = `<b>Lat/Lon:</b> ${textoCopiar}`;
+        textoCopiar = `Lon: ${lng.toFixed(6)}, Lat: ${lat.toFixed(6)}`;
+        contenidoFormato = `<b>Lon:</b> ${lng.toFixed(6)}<br><b>Lat:</b> ${lat.toFixed(6)}`;
     } else if (formato === 'UTM') {
         const utm = latLonToUTM(lat, lng, 17);
-        textoCopiar = `${utm.easting} E, ${utm.northing} N`;
-        contenidoFormato = `<b>UTM:</b> ${textoCopiar} (Zona 17N)`;
+        textoCopiar = `Este: ${utm.easting}, Norte: ${utm.northing}`;
+        contenidoFormato = `<b>Este (X):</b> ${utm.easting}<br><b>Norte (Y):</b> ${utm.northing} (Zona 17N)`;
     } else if (formato === 'DMS' || formato === 'GMS') {
         const dms = latLonToDMS(lat, lng);
-        textoCopiar = `${dms.latDMS} - ${dms.lngDMS}`;
-        contenidoFormato = `<b>GMS:</b> ${textoCopiar}`;
+        textoCopiar = `Lon: ${dms.lngDMS}, Lat: ${dms.latDMS}`;
+        contenidoFormato = `<b>Lon (GMS):</b> ${dms.lngDMS}<br><b>Lat (GMS):</b> ${dms.latDMS}`;
     }
 
     const esDarkMode = document.body.classList.contains('dark-mode');
     const colorNota = esDarkMode ? '#ffffff' : '#555555';
-    const colorBordeNota = esDarkMode ? '#555555' : '#dddddd';
+    const colorBordeNota = esDarkMode ? '#334e5a' : '#dddddd';
+    const colorTextoGeneral = esDarkMode ? '#ffffff' : '#333333';
 
     return `
-        <div style="font-family: sans-serif; font-size: 12px; min-width: 180px;">
-            ${contenidoFormato}<br>
-            <button onclick="navigator.clipboard.writeText('${textoCopiar}'); alert('Copiado');" style="margin-top:6px; width:100%; background:#0984e3; color:white; border:none; padding:4px; border-radius:3px; cursor:pointer;">📋 Copiar</button>
-            <div style="font-size:10px; font-style:italic; color:${colorNota}; margin-top:6px; border-top:1px solid ${colorBordeNota}; padding-top:4px;">
+        <div style="font-family: sans-serif; font-size: 12.5px; color: ${colorTextoGeneral};">
+            <div style="margin-bottom: 10px; line-height: 1.5;">${contenidoFormato}</div>
+            <button onclick="navigator.clipboard.writeText('${textoCopiar}'); alert('Coordenadas copiadas');" style="margin-top:4px; width:100%; background:#0984e3; color:white; border:none; padding:7px; border-radius:4px; cursor:pointer; font-weight:bold; font-size:12px;">📋 Copiar</button>
+            <div style="font-size:10px; font-style:italic; color:${colorNota}; margin-top:10px; border-top:1px solid ${colorBordeNota}; padding-top:6px; line-height: 1.3;">
                 Nota: Coordenadas de carácter meramente informativo. No son válidas para trámites legales, jurídicos o de titulación en el Registro Público.
             </div>
         </div>
     `;
 }
+
+// Función para abrir y posicionar el panel flotante de coordenadas vinculado a un marcador
+window.abrirPanelCoordenadasParaMarcador = function(marker) {
+    marcadorActivoActual = marker;
+    const panel = document.getElementById('coordFloatingPanel');
+    const bodyContent = document.getElementById('coordPanelBody');
+
+    if (panel && bodyContent) {
+        bodyContent.innerHTML = generarContenidoPanelCoordenadas(marker.lat, marker.lng);
+        panel.style.display = 'block';
+    }
+};
 
 // Control del Pin de Coordenadas (Drag & Drop)
 const CoordsControl = L.Control.extend({
@@ -362,14 +388,33 @@ const CoordsControl = L.Control.extend({
             const rect = map.getContainer().getBoundingClientRect();
             if (e.clientX >= rect.left && e.clientX <= rect.right && e.clientY >= rect.top && e.clientY <= rect.bottom) {
                 const finalLatLng = map.containerPointToLatLng([e.clientX - rect.left, e.clientY - rect.top]);
-                const marker = L.marker(finalLatLng).addTo(map);
+                const marker = L.marker(finalLatLng, { draggable: true }).addTo(map);
                 
-                // Guardar coordenadas puras en el marcador y registrarlo globalmente
                 marker.lat = finalLatLng.lat;
                 marker.lng = finalLatLng.lng;
                 window.listaMarcadoresCoordenadas.push(marker);
 
-                marker.bindPopup(generarPopupCoordenadasHtml(finalLatLng.lat, finalLatLng.lng)).openPopup();
+                // Evento al arrastrar el marcador: actualiza coordenadas en tiempo real
+                marker.on('drag', function(ev) {
+                    const pos = ev.target.getLatLng();
+                    marker.lat = pos.lat;
+                    marker.lng = pos.lng;
+                    if (marcadorActivoActual === marker) {
+                        const bodyContent = document.getElementById('coordPanelBody');
+                        const coordPanel = document.getElementById('coordFloatingPanel');
+                        if (bodyContent && coordPanel && coordPanel.style.display !== 'none') {
+                            bodyContent.innerHTML = generarContenidoPanelCoordenadas(marker.lat, marker.lng);
+                        }
+                    }
+                });
+
+                // Clic en el marcador: abre o restaura el panel minimizado
+                marker.on('click', function() {
+                    window.abrirPanelCoordenadasParaMarcador(marker);
+                });
+
+                // Abrir automáticamente al soltar
+                window.abrirPanelCoordenadasParaMarcador(marker);
             }
         });
         return container;
@@ -377,7 +422,7 @@ const CoordsControl = L.Control.extend({
 });
 map.addControl(new CoordsControl());
 
-// Cambio dinámico de formato: actualiza placeholders y refresca los popups abiertos automáticamente
+// Cambio dinámico de formato de coordenadas
 window.cambiarFormatoCoordenadas = function() {
     const selectEl = document.getElementById('selectTipoCoord') || document.getElementById('formatoCoordenadas');
     if (!selectEl) return;
@@ -398,8 +443,8 @@ window.cambiarFormatoCoordenadas = function() {
     } else if (formato === 'DMS' || formato === 'GMS') {
         if(labelX) labelX.innerText = 'Lon (GMS):';
         if(labelY) labelY.innerText = 'Lat (GMS):';
-        if(inputLong) inputLong.placeholder = 'Ej. 79° 54\' 10" O';
-        if(inputLat) inputLat.placeholder = 'Ej. 9° 21\' 46" N';
+        if(inputLong) inputLong.placeholder = 'Ej. -79° 54\' 10"';
+        if(inputLat) inputLat.placeholder = 'Ej. +9° 21\' 46"';
     } else if (formato === 'UTM') {
         if(labelX) labelX.innerText = 'Este:';
         if(labelY) labelY.innerText = 'Norte:';
@@ -407,13 +452,15 @@ window.cambiarFormatoCoordenadas = function() {
         if(inputLat) inputLat.placeholder = 'Ej. 990000';
     }
 
-    // Actualizar dinámicamente todos los marcadores de coordenadas activos en el mapa
-    if (window.listaMarcadoresCoordenadas && window.listaMarcadoresCoordenadas.length > 0) {
-        window.listaMarcadoresCoordenadas.forEach(marker => {
-            if (marker && map.hasLayer(marker)) {
-                marker.setPopupContent(generarPopupCoordenadasHtml(marker.lat, marker.lng));
+    // Actualizar dinámicamente el panel activo si está abierto
+    if (marcadorActivoActual) {
+        const coordPanel = document.getElementById('coordFloatingPanel');
+        if (coordPanel && coordPanel.style.display !== 'none') {
+            const bodyContent = document.getElementById('coordPanelBody');
+            if (bodyContent) {
+                bodyContent.innerHTML = generarContenidoPanelCoordenadas(marcadorActivoActual.lat, marcadorActivoActual.lng);
             }
-        });
+        }
     }
 };
 
@@ -468,8 +515,8 @@ window.irACoordenadasPersonalizadas = function() {
                 let min = parseFloat(partes[1]) || 0;
                 let sec = parseFloat(partes[2]) || 0;
                 let dec = deg + (min / 60) + (sec / 3600);
-                if (dmsStr.toUpperCase().includes('S') || dmsStr.toUpperCase().includes('O') || dmsStr.toUpperCase().includes('W') || dmsStr.startsWith('-')) {
-                    dec = -dec;
+                if (dmsStr.startsWith('-')) {
+                    dec = -Math.abs(dec);
                 }
                 return dec;
             }
@@ -486,14 +533,30 @@ window.irACoordenadasPersonalizadas = function() {
     }
 
     map.setView([lat, lng], 18);
-    const marker = L.marker([lat, lng]).addTo(map);
+    const marker = L.marker([lat, lng], { draggable: true }).addTo(map);
     
-    // Registrar el marcador generado por búsqueda manual
     marker.lat = lat;
     marker.lng = lng;
     window.listaMarcadoresCoordenadas.push(marker);
 
-    marker.bindPopup(generarPopupCoordenadasHtml(lat, lng)).openPopup();
+    marker.on('drag', function(ev) {
+        const pos = ev.target.getLatLng();
+        marker.lat = pos.lat;
+        marker.lng = pos.lng;
+        if (marcadorActivoActual === marker) {
+            const bodyContent = document.getElementById('coordPanelBody');
+            const coordPanel = document.getElementById('coordFloatingPanel');
+            if (bodyContent && coordPanel && coordPanel.style.display !== 'none') {
+                bodyContent.innerHTML = generarContenidoPanelCoordenadas(marker.lat, marker.lng);
+            }
+        }
+    });
+
+    marker.on('click', function() {
+        window.abrirPanelCoordenadasParaMarcador(marker);
+    });
+
+    window.abrirPanelCoordenadasParaMarcador(marker);
 };
 
 // ============================================================================
@@ -571,7 +634,7 @@ window.limpiarFiltroCatastro = function() {
         capaSeleccionadaGeoJSON = null;
     }
 
-    // 3. NUEVO: Restablecer el estilo y deseleccionar el predio marcado por clic individual
+    // 3. Restablecer el estilo y deseleccionar el predio marcado por clic individual
     if (typeof capaPredioClicSeleccionado !== 'undefined' && capaPredioClicSeleccionado) {
         if (typeof capaPredioClicSeleccionado.setStyle === 'function') {
             capaPredioClicSeleccionado.setStyle({ color: '#e67e22', weight: 2, fillOpacity: 0.3 });
@@ -586,11 +649,15 @@ window.limpiarFiltroCatastro = function() {
         });
         window.listaMarcadoresCoordenadas = [];
     }
+    marcadorActivoActual = null;
 
     map.closePopup();
 
     const panelAtributos = document.getElementById('attributeFloatingPanel');
     if (panelAtributos) panelAtributos.style.display = 'none';
+
+    const panelCoord = document.getElementById('coordFloatingPanel');
+    if (panelCoord) panelCoord.style.display = 'none';
 
     const panelSV = document.getElementById('streetViewPanel');
     if (panelSV) panelSV.style.display = 'none';
@@ -862,12 +929,12 @@ document.addEventListener('DOMContentLoaded', function() {
         L.DomEvent.disableScrollPropagation(coordPanel);
     }
 
-    // 1. MINIMIZAR (−): Oculta el panel pero mantiene el marcador intacto en el mapa
+    // 1. MINIMIZAR (−): Oculta únicamente el panel, conserva el marcador en el mapa
     if (minimizeBtn && coordPanel) {
         minimizeBtn.addEventListener('click', (e) => {
             e.stopPropagation();
             coordPanel.style.display = 'none';
-            // El marcador sigue activo en el mapa. Al hacerle clic de nuevo, se reabre.
+            // El marcador permanece activo en el mapa y restaurará el panel al hacerle clic
         });
     }
 
@@ -878,24 +945,22 @@ document.addEventListener('DOMContentLoaded', function() {
             coordPanel.style.display = 'none';
 
             if (marcadorActivoActual) {
-                // Remover del mapa
                 if (map.hasLayer(marcadorActivoActual)) {
                     map.removeLayer(marcadorActivoActual);
                 }
-                // Remover del arreglo global
                 window.listaMarcadoresCoordenadas = window.listaMarcadoresCoordenadas.filter(m => m !== marcadorActivoActual);
                 marcadorActivoActual = null;
             }
         });
     }
 
-    // 3. DRAG & DROP (Arrastrar el panel por la pantalla)
+    // 3. DRAG & DROP (Arrastrar ventana por la pantalla)
     if (coordPanel && coordHeader) {
         let isDragging = false;
         let startX = 0, startY = 0, initialLeft = 0, initialTop = 0;
 
         coordHeader.addEventListener('mousedown', function(e) {
-            if (e.target.closest('button')) return; // Evitar arrastrar si se hace clic en minimizar o cerrar
+            if (e.target.closest('button')) return;
             isDragging = true;
             startX = e.clientX;
             startY = e.clientY;
