@@ -174,24 +174,18 @@
             <iframe id="streetViewIframe" src=""></iframe>
         </div>
 
-        <!-- Panel Flotante Coordenadas del Marcador -->
-        <div id="placemarkPanel">
-            <div style="background:#2d3436; color:white; padding:10px 15px; display:flex; justify-content:space-between; align-items:center;">
-                <span style="font-weight:bold; font-size:14px;">📍 Coordenadas del Marcador</span>
-                <button onclick="document.getElementById('placemarkPanel').style.display='none'" style="background:none; border:none; color:white; font-size:16px; cursor:pointer;">&times;</button>
-            </div>
-            <div style="padding:15px; font-size:13px; color:#333;">
-                <div style="margin-bottom:8px;">
-                    <strong style="color:#0984e3;">Sistema:</strong> <span id="placemarkSystem">-</span>
-                </div>
-                <div style="margin-bottom:8px;">
-                    <strong style="color:#0984e3;">X / Long:</strong> <span id="placemarkX">-</span>
-                </div>
-                <div style="margin-bottom:8px;">
-                    <strong style="color:#0984e3;">Y / Lat:</strong> <span id="placemarkY">-</span>
+<!-- Nuevo Panel Flotante para Coordenadas (Con Minimizar y Cerrar) -->
+        <div id="coordFloatingPanel" style="display:none; position:absolute; top:80px; left:20px; width:280px; background:white; z-index:2000; border-radius:8px; box-shadow:0 4px 15px rgba(0,0,0,0.3); overflow:hidden;">
+            <div id="coordPanelHeader" style="background:#2d3436; color:white; padding:10px 15px; display:flex; justify-content:space-between; align-items:center; cursor:move;">
+                <span style="font-weight:bold; font-size:13px;">📍 Coordenadas</span>
+                <div style="display:flex; gap:12px; align-items:center;">
+                    <button id="minimizeCoordBtn" title="Minimizar" style="background:none; border:none; color:inherit; font-size:18px; cursor:pointer; font-weight:bold; line-height:1;">−</button>
+                    <button id="closeCoordBtn" title="Cerrar" style="background:none; border:none; color:inherit; font-size:18px; cursor:pointer; font-weight:bold; line-height:1;">&times;</button>
                 </div>
             </div>
+            <div id="coordPanelBody" style="padding:15px; max-height:400px; overflow-y:auto;"></div>
         </div>
+        
 
         <!-- Panel Flotante de Atributos del Predio -->
         <div id="attributeFloatingPanel" style="display:none; position:absolute; top:20px; left:20px; width:300px; background:white; z-index:2000; border-radius:8px; box-shadow:0 4px 15px rgba(0,0,0,0.3); overflow:hidden;">
