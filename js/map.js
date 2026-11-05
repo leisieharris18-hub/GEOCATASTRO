@@ -83,7 +83,7 @@ document.addEventListener("DOMContentLoaded", function() {
         return { type: "FeatureCollection", features: featuresConvertidas };
     }
 
-   // 1. Cargar Catastro (Queda abajo como capa secundaria)
+   // 1. Cargar Catastro (Se asigna fill: true con fillOpacity: 0 para que toda el área interna sea clickeable)
     fetch('CATASTRALESC3.json')
         .then(res => {
             if (!res.ok) throw new Error("No se pudo cargar CATASTRALESC3.json");
@@ -94,7 +94,7 @@ document.addEventListener("DOMContentLoaded", function() {
             datosCatastroGlobal = dataLimpia;
             
             capaCatastroLeaflet = L.geoJSON(dataLimpia, {
-                style: { color: '#00cec9', weight: 2, fillOpacity: 0, fill: false },
+                style: { color: '#00cec9', weight: 2, fillOpacity: 0, fill: true },
                 onEachFeature: function(feature, layer) {
                     configurarClickAtributos(layer, 'catastro');
                 }
@@ -104,7 +104,7 @@ document.addEventListener("DOMContentLoaded", function() {
         })
         .catch(err => console.error("Error en Catastro:", err));
 
-    // 2. Cargar Fincas (Carga después y se posiciona estrictamente arriba con prioridad)
+    // 2. Cargar Fincas (Prioridad superior)
     fetch('FINCAS.json')
         .then(res => {
             if (!res.ok) throw new Error("No se pudo cargar FINCAS.json");
@@ -121,13 +121,11 @@ document.addEventListener("DOMContentLoaded", function() {
                 }
             }).addTo(map);
             
-            // Forzar que Fincas esté siempre al frente de los clics visuales
             capaFincasLeaflet.bringToFront();
             layerControl.addOverlay(capaFincasLeaflet, "Fincas");
         })
         .catch(err => console.error("Error en FINCAS:", err));
 
-    // Forzar el redibujado de Leaflet tras cargar el DOM para evitar pantallas en blanco
     setTimeout(function() {
         if (map) map.invalidateSize();
     }, 250);
@@ -135,7 +133,7 @@ document.addEventListener("DOMContentLoaded", function() {
 
 
 // ============================================================================
-// ETAPA 2: INTEGRACIÓN DEL MODO OSCURO (DARK THEME) Y EVENTO DINÁMICO
+// ETAPA 2: INTEGRACIÓN DEL MODO OSCURO (DARK THEME)
 // ============================================================================
 
 document.addEventListener("DOMContentLoaded", function() {
@@ -156,7 +154,6 @@ document.addEventListener("DOMContentLoaded", function() {
                 localStorage.setItem("geo_dark_mode", "false");
             }
 
-            // Refrescar automáticamente el panel de coordenadas activo si está desplegado
             if (marcadorActivoActual) {
                 const coordPanel = document.getElementById('coordFloatingPanel');
                 if (coordPanel && coordPanel.style.display !== 'none') {
@@ -169,7 +166,7 @@ document.addEventListener("DOMContentLoaded", function() {
 
 
 // ============================================================================
-// ETAPA 3: INTEGRACIÓN DE NAVEGACIÓN 3D Y STREET VIEW
+// ETAPA 3: NAVEGACIÓN 3D Y STREET VIEW
 // ============================================================================
 
 const NorthArrowControl = L.Control.extend({
@@ -247,7 +244,7 @@ map.addControl(new StreetViewControl());
 
 
 // ============================================================================
-// ETAPA 4: HERRAMIENTAS GEODÉSICAS Y CONVERSIONES (SIN N/S/E/O Y SIGNOS PREDOMINANTES)
+// ETAPA 4: HERRAMIENTAS GEODÉSICAS Y CONVERSIONES
 // ============================================================================
 
 function latLonToUTM(lat, lon, zone = 17) {
@@ -265,7 +262,6 @@ function latLonToUTM(lat, lon, zone = 17) {
     return { easting: easting.toFixed(2), northing: northing.toFixed(2) };
 }
 
-// Conversión a GMS sin letras N,S,E,O (unicamente signos + y -)
 function latLonToDMS(lat, lng) {
     function convert(coord) {
         const sign = coord < 0 ? "-" : "+";
@@ -297,14 +293,12 @@ window.cerrarModalCoordenadas = function() {
 
 
 // ============================================================================
-// ETAPA 5: BARRAS INFERIORES, PANEL FLOTANTE DE COORDENADAS Y MARCADORES
+// ETAPA 5: PANELES FLOTANTES Y MARCADORES DE COORDENADAS
 // ============================================================================
 
 window.listaMarcadoresCoordenadas = [];
-let marcadorActivoActual = null; // Guarda el marcador que tiene abierto el panel actualmente
+let marcadorActivoActual = null;
 
-// Función para generar el contenido HTML del panel flotante de coordenadas
-// Orden estricto: Primero Longitud, Segundo Latitud. Sin letras N,S,E,O.
 function generarContenidoPanelCoordenadas(lat, lng) {
     const selectEl = document.getElementById('selectTipoCoord') || document.getElementById('formatoCoordenadas');
     const formato = selectEl ? selectEl.value.toUpperCase() : 'DD';
@@ -341,7 +335,6 @@ function generarContenidoPanelCoordenadas(lat, lng) {
     `;
 }
 
-// Función para abrir y posicionar el panel flotante de coordenadas vinculado a un marcador
 window.abrirPanelCoordenadasParaMarcador = function(marker) {
     marcadorActivoActual = marker;
     const panel = document.getElementById('coordFloatingPanel');
@@ -353,7 +346,6 @@ window.abrirPanelCoordenadasParaMarcador = function(marker) {
     }
 };
 
-// Control del Pin de Coordenadas (Drag & Drop)
 const CoordsControl = L.Control.extend({
     options: { position: 'topleft' },
     onAdd: function(map) {
@@ -394,7 +386,6 @@ const CoordsControl = L.Control.extend({
                 marker.lng = finalLatLng.lng;
                 window.listaMarcadoresCoordenadas.push(marker);
 
-                // Evento al arrastrar el marcador: actualiza coordenadas en tiempo real
                 marker.on('drag', function(ev) {
                     const pos = ev.target.getLatLng();
                     marker.lat = pos.lat;
@@ -408,12 +399,10 @@ const CoordsControl = L.Control.extend({
                     }
                 });
 
-                // Clic en el marcador: abre o restaura el panel minimizado
                 marker.on('click', function() {
                     window.abrirPanelCoordenadasParaMarcador(marker);
                 });
 
-                // Abrir automáticamente al soltar
                 window.abrirPanelCoordenadasParaMarcador(marker);
             }
         });
@@ -422,7 +411,6 @@ const CoordsControl = L.Control.extend({
 });
 map.addControl(new CoordsControl());
 
-// Cambio dinámico de formato de coordenadas
 window.cambiarFormatoCoordenadas = function() {
     const selectEl = document.getElementById('selectTipoCoord') || document.getElementById('formatoCoordenadas');
     if (!selectEl) return;
@@ -452,7 +440,6 @@ window.cambiarFormatoCoordenadas = function() {
         if(inputLat) inputLat.placeholder = 'Ej. 990000';
     }
 
-    // Actualizar dinámicamente el panel activo si está abierto
     if (marcadorActivoActual) {
         const coordPanel = document.getElementById('coordFloatingPanel');
         if (coordPanel && coordPanel.style.display !== 'none') {
@@ -559,6 +546,7 @@ window.irACoordenadasPersonalizadas = function() {
     window.abrirPanelCoordenadasParaMarcador(marker);
 };
 
+
 // ============================================================================
 // ETAPA 6: MODALES Y ALERTAS DEL SISTEMA
 // ============================================================================
@@ -572,6 +560,7 @@ function mostrarAlertaCatastro(mensaje, tipo) {
         setTimeout(() => { alertaDiv.style.display = 'none'; }, 5000);
     }
 }
+
 
 // ============================================================================
 // ETAPA 7: MÓDULO LATERAL DE GESTIÓN CATASTRAL (BÚSQUEDA Y LIMPIEZA TOTAL)
@@ -636,19 +625,35 @@ window.buscarCatastro = function() {
 };
 
 window.limpiarFiltroCatastro = function() {
-    // 1. Vaciar campos de texto del formulario
+    // 1. Vaciar todos los campos de texto del formulario de gestión catastral
     ['inputFinca', 'inputTomo', 'inputFolio', 'inputUbicacion', 'inputPropietario'].forEach(id => {
         const el = document.getElementById(id); 
         if (el) el.value = '';
     });
 
-    // 2. Remover la capa de búsqueda general del mapa
+    // 2. Vaciar también el buscador de planos manual
+    const inputPlano = document.getElementById('inputPlanoSearch');
+    if (inputPlano) inputPlano.value = '';
+
+    // 3. Restablecer el visor de imágenes de planos a su estado inicial
+    const imgElement = document.getElementById('planoImg');
+    const placeholder = document.getElementById('textoPlanoPlaceholder');
+    if (imgElement) {
+        imgElement.style.display = 'none';
+        imgElement.src = '';
+    }
+    if (placeholder) {
+        placeholder.style.display = 'block';
+        placeholder.innerText = "Vista previa del plano";
+    }
+
+    // 4. Remover la capa de búsqueda general del mapa
     if (capaSeleccionadaGeoJSON) {
         map.removeLayer(capaSeleccionadaGeoJSON);
         capaSeleccionadaGeoJSON = null;
     }
 
-    // 3. Restablecer el estilo y deseleccionar el predio marcado por clic individual
+    // 5. Restablecer el estilo y deseleccionar el predio marcado por clic individual
     if (typeof capaPredioClicSeleccionado !== 'undefined' && capaPredioClicSeleccionado) {
         if (typeof capaPredioClicSeleccionado.setStyle === 'function') {
             capaPredioClicSeleccionado.setStyle({ color: '#e67e22', weight: 2, fillOpacity: 0.3 });
@@ -656,7 +661,7 @@ window.limpiarFiltroCatastro = function() {
         capaPredioClicSeleccionado = null;
     }
 
-    // 4. Limpiar marcadores de coordenadas y cerrar todos los paneles flotantes
+    // 6. Limpiar marcadores de coordenadas y cerrar todos los paneles flotantes
     if (window.listaMarcadoresCoordenadas && window.listaMarcadoresCoordenadas.length > 0) {
         window.listaMarcadoresCoordenadas.forEach(marker => {
             if (marker && map.hasLayer(marker)) map.removeLayer(marker);
@@ -676,10 +681,14 @@ window.limpiarFiltroCatastro = function() {
     const panelSV = document.getElementById('streetViewPanel');
     if (panelSV) panelSV.style.display = 'none';
 
-    // Ocultar alerta si estaba activa
+    // Ocultar alertas si estaban activas
     const alertaDiv = document.getElementById('alertaCatastro');
     if (alertaDiv) alertaDiv.style.display = 'none';
+
+    const alertaPlano = document.getElementById('alertaPlano');
+    if (alertaPlano) alertaPlano.style.display = 'none';
 };
+
 
 // ============================================================================
 // ETAPA 8: MÓDULO DE CONSULTA DE PLANOS
@@ -694,7 +703,6 @@ window.buscarPlanoManual = function() {
 
     const valorInput = input.value.trim();
 
-    // Si está vacío al momento de presionar buscar
     if (valorInput === "") {
         if (imgElement) imgElement.style.display = 'none';
         if (placeholder) {
@@ -704,7 +712,6 @@ window.buscarPlanoManual = function() {
         return;
     }
 
-    // Lógica de búsqueda normal si hay texto
     if (imgElement && placeholder) {
         const rutaImagen = RUTA_PLANOS_GENERAL + valorInput + ".jpg";
         
@@ -724,7 +731,6 @@ window.buscarPlanoManual = function() {
     }
 };
 
-// Detector automático para limpiar el visor de planos cuando el usuario borre el texto
 document.addEventListener("DOMContentLoaded", function() {
     const inputPlano = document.getElementById('inputPlanoSearch');
     if (inputPlano) {
@@ -743,8 +749,9 @@ document.addEventListener("DOMContentLoaded", function() {
     }
 });
 
+
 // ============================================================================
-// ETAPA 9: INTERACCIÓN, SELECCIÓN VISUAL Y PANEL FLOTANTE DE ATRIBUTOS
+// ETAPA 9: INTERACCIÓN, SELECCIÓN Y PANEL DE ATRIBUTOS
 // ============================================================================
 
 let capaPredioClicSeleccionado = null;
@@ -755,18 +762,16 @@ function configurarClickAtributos(layer, tipoOrigen) {
             if (e.originalEvent) L.DomEvent.stopPropagation(e.originalEvent);
         }
 
-        // Si ya había un predio seleccionado por clic, restaurar su color original
         if (capaPredioClicSeleccionado) {
             if (typeof capaPredioClicSeleccionado.setStyle === 'function') {
                 if (capaPredioClicSeleccionado.options && capaPredioClicSeleccionado.options.color === '#ff007f') {
                     capaPredioClicSeleccionado.setStyle({ color: '#e67e22', weight: 2, fillOpacity: 0.3 });
                 } else {
-                    capaPredioClicSeleccionado.setStyle({ color: '#00cec9', weight: 2, fillOpacity: 0, fill: false });
+                    capaPredioClicSeleccionado.setStyle({ color: '#00cec9', weight: 2, fillOpacity: 0, fill: true });
                 }
             }
         }
 
-        // Seleccionar el nuevo predio y aplicarle el color rosado destacado
         capaPredioClicSeleccionado = e.target;
         if (typeof capaPredioClicSeleccionado.setStyle === 'function') {
             capaPredioClicSeleccionado.setStyle({ color: '#ff007f', weight: 4, fillOpacity: 0.5, fill: true });
@@ -778,15 +783,15 @@ function configurarClickAtributos(layer, tipoOrigen) {
         const props = e.target.feature.properties || {};
         const centroide = (typeof e.target.getBounds === 'function') ? e.target.getBounds().getCenter() : e.latlng;
 
-        // Lectura robusta contemplando las variantes exactas de tu tabla de atributos
         const finca = props.FINCA || props.finca || '-';
         const tomo = props.TOMO || props.tomo || '-';
         const folio = props.FOLIO || props.folio || '-';
         const codUbicacion = props.CODIGO_UBICACION || props.COD_UBICACION || props.codigo_ubicacion || '-';
         const propietario = props.PROPIETARIO || props.propietario || '-';
         
-        // Capturar superficie o área con sus posibles nombres en ArcGIS
-        const superficie = props.SUPERFICIE || props.superficie || props.Shape_Area || props.SHAPE_AREA || '-';
+        // PUNTOS 2: Superficie únicamente del campo SUPERFICIE original o guion (—) si no existe
+        const supVal = props.SUPERFICIE !== undefined && props.SUPERFICIE !== null ? props.SUPERFICIE : (props.superficie !== undefined && props.superficie !== null ? props.superficie : '');
+        const superficie = (supVal !== '' && supVal !== '-' && supVal !== null) ? supVal : '—';
         
         const planoVal = props.PLANO || props.plano || props.imagen || '-';
 
@@ -827,8 +832,10 @@ function configurarClickAtributos(layer, tipoOrigen) {
         }
     });
 }
+
+
 // ============================================================================
-// ETAPA 10: MANEJO DEL PANEL FLOTANTE (DRAG & DROP Y CIERRE CON DESELECCIÓN)
+// ETAPA 10: MANEJO DEL PANEL FLOTANTE DE ATRIBUTOS
 // ============================================================================
 
 document.addEventListener('DOMContentLoaded', function() {
@@ -841,13 +848,11 @@ document.addEventListener('DOMContentLoaded', function() {
         L.DomEvent.disableScrollPropagation(panel);
     }
 
-    // ACCIÓN AL PRESIONAR LA "X" DEL PANEL DE ATRIBUTOS
     if (closeBtn && panel) {
         closeBtn.addEventListener('click', (e) => {
             e.stopPropagation();
             panel.style.display = 'none';
 
-            // Deseleccionar y restaurar el color del predio en el mapa al cerrar el panel
             if (typeof capaPredioClicSeleccionado !== 'undefined' && capaPredioClicSeleccionado) {
                 if (typeof capaPredioClicSeleccionado.setStyle === 'function') {
                     capaPredioClicSeleccionado.setStyle({ color: '#e67e22', weight: 2, fillOpacity: 0.3 });
@@ -887,8 +892,9 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 });
 
+
 // ============================================================================
-// ETAPA 11: SOPORTE GLOBAL DE TECLA ENTER PARA BÚSQUEDAS
+// ETAPA 11: SOPORTE DE TECLA ENTER
 // ============================================================================
 
 document.addEventListener("DOMContentLoaded", function() {
@@ -934,8 +940,9 @@ document.addEventListener("DOMContentLoaded", function() {
     });
 });
 
+
 // ============================================================================
-// ETAPA 12: MANEJO DEL PANEL FLOTANTE DE COORDENADAS (MINIMIZAR, CERRAR Y DRAG)
+// ETAPA 12: PANEL FLOTANTE DE COORDENADAS
 // ============================================================================
 
 document.addEventListener('DOMContentLoaded', function() {
@@ -949,16 +956,13 @@ document.addEventListener('DOMContentLoaded', function() {
         L.DomEvent.disableScrollPropagation(coordPanel);
     }
 
-    // 1. MINIMIZAR (−): Oculta únicamente el panel, conserva el marcador en el mapa
     if (minimizeBtn && coordPanel) {
         minimizeBtn.addEventListener('click', (e) => {
             e.stopPropagation();
             coordPanel.style.display = 'none';
-            // El marcador permanece activo en el mapa y restaurará el panel al hacerle clic
         });
     }
 
-    // 2. CERRAR (×): Elimina definitivamente el marcador del mapa y oculta el panel
     if (closeCoordBtn && coordPanel) {
         closeCoordBtn.addEventListener('click', (e) => {
             e.stopPropagation();
@@ -974,7 +978,6 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
-    // 3. DRAG & DROP (Arrastrar ventana por la pantalla)
     if (coordPanel && coordHeader) {
         let isDragging = false;
         let startX = 0, startY = 0, initialLeft = 0, initialTop = 0;
