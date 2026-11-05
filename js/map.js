@@ -596,21 +596,30 @@ window.buscarCatastro = function() {
             const matches = dataset.features.filter(f => {
                 const p = f.properties || {};
                 
-                // Convertir cada atributo a string limpio (manejando nulos o vacíos)
+                // Extraer valores contemplando múltiples posibles nombres de campos en el JSON
                 const fInc = String(p.FINCA || p.finca || '').trim();
                 const tOm = String(p.TOMO || p.tomo || '').trim();
                 const fOl = String(p.FOLIO || p.folio || '').trim();
-                const uBi = String(p.COD_UBICACION || p.codigo_ubicacion || '').trim();
+                
+                // Evaluar todas las posibles variantes para la ubicación
+                const uBi = String(
+                    p.COD_UBICACION || 
+                    p.codigo_ubicacion || 
+                    p.UBICACION || 
+                    p.ubicacion || 
+                    p.COD_UBICA || 
+                    p.cod_ubicacion || ''
+                ).trim();
+
                 const pRo = String(p.PROPIETARIO || p.propietario || '').toLowerCase();
 
-                // Validación estricta de secuencia exacta consecutiva (.includes)
+                // Validación de secuencia exacta consecutiva (.includes)
                 const cumpleFinca = (finca === '' || fInc.includes(finca));
                 const cumpleTomo = (tomo === '' || tOm.includes(tomo));
                 const cumpleFolio = (folio === '' || fOl.includes(folio));
                 const cumpleUbicacion = (ubicacion === '' || uBi.includes(ubicacion));
                 const cumplePropietario = (propietario === '' || pRo.includes(propietario));
 
-                // El predio se selecciona únicamente si cumple con todos los filtros rellenados
                 return cumpleFinca && cumpleTomo && cumpleFolio && cumpleUbicacion && cumplePropietario;
             });
             encontrados = encontrados.concat(matches);
@@ -728,12 +737,16 @@ function configurarClickAtributos(layer, tipoOrigen) {
         const props = e.target.feature.properties || {};
         const centroide = (typeof e.target.getBounds === 'function') ? e.target.getBounds().getCenter() : e.latlng;
 
+        // Lectura robusta contemplando las variantes exactas de tu tabla de atributos
         const finca = props.FINCA || props.finca || '-';
         const tomo = props.TOMO || props.tomo || '-';
         const folio = props.FOLIO || props.folio || '-';
-        const codUbicacion = props.COD_UBICACION || props.codigo_ubicacion || '-';
+        const codUbicacion = props.CODIGO_UBICACION || props.COD_UBICACION || props.codigo_ubicacion || '-';
         const propietario = props.PROPIETARIO || props.propietario || '-';
-        const superficie = props.SUPERFICIE || props.superficie || '-';
+        
+        // Capturar superficie o área con sus posibles nombres en ArcGIS
+        const superficie = props.SUPERFICIE || props.superficie || props.Shape_Area || props.SHAPE_AREA || '-';
+        
         const planoVal = props.PLANO || props.plano || props.imagen || '-';
 
         let nombrePlanoLimpio = planoVal !== '-' ? String(planoVal).split(/[\\/]/).pop().replace(/\.[^/.]+$/, "").trim() + ".jpg" : '-';
@@ -746,9 +759,9 @@ function configurarClickAtributos(layer, tipoOrigen) {
                     <tr><td style="padding:4px; border:1px solid #dfe6e9; font-weight:bold;">FINCA</td><td style="padding:4px; border:1px solid #dfe6e9;">${finca}</td></tr>
                     <tr><td style="padding:4px; border:1px solid #dfe6e9; font-weight:bold;">TOMO</td><td style="padding:4px; border:1px solid #dfe6e9;">${tomo}</td></tr>
                     <tr><td style="padding:4px; border:1px solid #dfe6e9; font-weight:bold;">FOLIO</td><td style="padding:4px; border:1px solid #dfe6e9;">${folio}</td></tr>
-                    <tr><td style="padding:4px; border:1px solid #dfe6e9; font-weight:bold;">UBICACIÓN</td><td style="padding:4px; border:1px solid #dfe6e9;">${codUbicacion}</td></tr>
+                    <tr><td style="padding:4px; border:1px solid #dfe6e9; font-weight:bold;">CODIGO_UBICACION</td><td style="padding:4px; border:1px solid #dfe6e9;">${codUbicacion}</td></tr>
                     <tr><td style="padding:4px; border:1px solid #dfe6e9; font-weight:bold;">PROPIETARIO</td><td style="padding:4px; border:1px solid #dfe6e9;">${propietario}</td></tr>
-                    <tr><td style="padding:4px; border:1px solid #dfe6e9; font-weight:bold;">SUPERFICIE</td><td style="padding:4px; border:1px solid #dfe6e9;">${superficie}</td></tr>
+                    <tr><td style="padding:4px; border:1px solid #dfe6e9; font-weight:bold;">SUPERFICIE (m²)</td><td style="padding:4px; border:1px solid #dfe6e9;">${superficie}</td></tr>
                 </tbody>
             </table>
 
@@ -773,7 +786,6 @@ function configurarClickAtributos(layer, tipoOrigen) {
         }
     });
 }
-
 // ============================================================================
 // ETAPA 10: MANEJO DEL PANEL FLOTANTE (DRAG & DROP Y CIERRE CON DESELECCIÓN)
 // ============================================================================
