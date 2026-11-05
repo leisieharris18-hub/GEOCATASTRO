@@ -660,10 +660,9 @@ document.addEventListener("DOMContentLoaded", function() {
 });
 
 // ============================================================================
-// ETAPA 9: INTERACCIÓN, SELECCIÓN VISUAL Y PANEL FLOTANTE DE ATRIBUTOS (CLIC EN MAPA)
+// ETAPA 9: INTERACCIÓN, SELECCIÓN VISUAL Y PANEL FLOTANTE DE ATRIBUTOS
 // ============================================================================
 
-// Variable global para mantener el control de la capa o predio seleccionado actualmente mediante clic
 let capaPredioClicSeleccionado = null;
 
 function configurarClickAtributos(layer, tipoOrigen) {
@@ -672,21 +671,18 @@ function configurarClickAtributos(layer, tipoOrigen) {
             if (e.originalEvent) L.DomEvent.stopPropagation(e.originalEvent);
         }
 
-        // 1. SELECCIÓN VISUAL: Si ya había un predio seleccionado por clic, restaurar su estilo original
+        // Si ya había un predio seleccionado por clic, restaurar su color original
         if (capaPredioClicSeleccionado) {
             if (typeof capaPredioClicSeleccionado.setStyle === 'function') {
-                // Restablecer según pertenezca a fincas o catastro
                 if (capaPredioClicSeleccionado.options && capaPredioClicSeleccionado.options.color === '#ff007f') {
-                    // Si era de fincas (naranja original: #e67e22)
                     capaPredioClicSeleccionado.setStyle({ color: '#e67e22', weight: 2, fillOpacity: 0.3 });
                 } else {
-                    // Si era de catastro (cian original: #00cec9)
                     capaPredioClicSeleccionado.setStyle({ color: '#00cec9', weight: 2, fillOpacity: 0, fill: false });
                 }
             }
         }
 
-        // 2. Marcar el nuevo predio como seleccionado y aplicarle estilo destacado (color rosado fuerte)
+        // Seleccionar el nuevo predio y aplicarle el color rosado destacado
         capaPredioClicSeleccionado = e.target;
         if (typeof capaPredioClicSeleccionado.setStyle === 'function') {
             capaPredioClicSeleccionado.setStyle({ color: '#ff007f', weight: 4, fillOpacity: 0.5, fill: true });
@@ -707,11 +703,7 @@ function configurarClickAtributos(layer, tipoOrigen) {
         const planoVal = props.PLANO || props.plano || props.imagen || '-';
 
         let nombrePlanoLimpio = planoVal !== '-' ? String(planoVal).split(/[\\/]/).pop().replace(/\.[^/.]+$/, "").trim() + ".jpg" : '-';
-
-        let carpetaSeleccionada = RUTA_PLANOS_GENERAL; 
-        if (tipoOrigen === 'fincas') {
-            carpetaSeleccionada = RUTA_PLANOS_BARRIO_NORTE; 
-        }
+        let carpetaSeleccionada = (tipoOrigen === 'fincas') ? RUTA_PLANOS_BARRIO_NORTE : RUTA_PLANOS_GENERAL; 
 
         const contenidoHtml = `
             <table style="width: 100%; border-collapse: collapse; font-size: 11px; margin-bottom: 10px; color: #333;">
@@ -733,7 +725,7 @@ function configurarClickAtributos(layer, tipoOrigen) {
             <div style="text-align: center; font-weight: bold; font-size:12px; margin-bottom: 5px;">Vista del Plano:</div>
             <div style="background: #f8f9fa; border: 1px solid #dfe6e9; min-height: 100px; display: flex; align-items: center; justify-content: center;">
                 ${nombrePlanoLimpio !== '-.jpg' ? `
-                    <img id="planoImgPopup" src="${carpetaSeleccionada}${nombrePlanoLimpio}" style="width: 100%; cursor: pointer;" onclick="window.open(this.src, '_blank')" onerror="this.src='${RUTA_PLANOS_BARRIO_NORTE}${nombrePlanoLimgio}'; this.onerror=function(){this.style.display='none'; this.nextElementSibling.style.display='block';};" />
+                    <img id="planoImgPopup" src="${carpetaSeleccionada}${nombrePlanoLimpio}" style="width: 100%; cursor: pointer;" onclick="window.open(this.src, '_blank')" onerror="this.src='${RUTA_PLANOS_BARRIO_NORTE}${nombrePlanoLimpio}'; this.onerror=function(){this.style.display='none'; this.nextElementSibling.style.display='block';};" />
                     <div style="display:none; color:red; font-size:10px; padding:10px;">⚠️ Plano no encontrado en la carpeta correspondiente: <br><b>${nombrePlanoLimpio}</b></div>
                 ` : '<span style="font-size:11px; color:#b2bec3;">No hay plano asociado</span>'}
             </div>
