@@ -747,7 +747,6 @@ document.addEventListener("DOMContentLoaded", function() {
     }
 });
 
-
 // ============================================================================
 // ETAPA 9: INTERACCIÓN, SELECCIÓN VISUAL Y PANEL FLOTANTE DE ATRIBUTOS
 // ============================================================================
@@ -756,25 +755,10 @@ let capaPredioClicSeleccionado = null;
 
 function configurarClickAtributos(layer, tipoOrigen) {
     layer.on('click', function(e) {
-        // Si el clic viene de la capa celeste, verificamos primero si el usuario hizo clic 
-        // en un punto que también está cubierto por una Finca (naranja). 
-        // Si hay una finca naranja activa en ese mismo punto geográfico, ignoramos el celeste para darle prioridad al naranja.
-        if (tipoOrigen === 'catastro' && capaFincasGlobal && capaFincasLeaflet) {
-            let colisionConFinca = false;
-            capaFincasLeaflet.eachLayer(fincaLayer => {
-                if (typeof fincaLayer.getBounds === 'function' && fincaLayer.getBounds().contains(e.latlng)) {
-                    colisionConFinca = true;
-                }
-            });
-            if (colisionConFinca) {
-                return; // Ignora el celeste porque hay una finca naranja arriba
-            }
-        }
-
-        // Detener la propagación normal del evento del mapa
+        // Detener la propagación para que el clic no afecte al mapa base
         L.DomEvent.stopPropagation(e);
 
-        // Restaurar el color del predio previamente seleccionado
+        // Si ya había un predio seleccionado, restaurar su color original según su capa de origen
         if (capaPredioClicSeleccionado) {
             if (typeof capaPredioClicSeleccionado.setStyle === 'function') {
                 const propsAnteriores = capaPredioClicSeleccionado.feature.properties || {};
@@ -787,7 +771,7 @@ function configurarClickAtributos(layer, tipoOrigen) {
             }
         }
 
-        // Resaltar el nuevo predio seleccionado en color rosado brillante
+        // Seleccionar el nuevo predio y resaltarlo en color rosado brillante
         capaPredioClicSeleccionado = e.target;
         if (typeof capaPredioClicSeleccionado.setStyle === 'function') {
             capaPredioClicSeleccionado.setStyle({ color: '#ff007f', weight: 4, fillOpacity: 0.5, fill: true });
@@ -799,10 +783,11 @@ function configurarClickAtributos(layer, tipoOrigen) {
         const props = e.target.feature.properties || {};
         const centroide = (typeof e.target.getBounds === 'function') ? e.target.getBounds().getCenter() : e.latlng;
 
+        // Lectura de atributos compatible con ambas tablas (fincas y catastro)
         const finca = props.FINCA || props.finca || '-';
         const tomo = props.TOMO || props.tomo || '-';
         const folio = props.FOLIO || props.folio || '-';
-        const codUbicacion = props.CODIGO_UBICACION || props.COD_UBICACION || props.codigo_ubicacion || '-';
+        const codUbicacion = props.CODIGO_UBICACION || props.COD_UBICACION || props.codigo_ubicacion || props.ubicacion || '-';
         const propietario = props.PROPIETARIO || props.propietario || '-';
         const superficie = props.SUPERFICIE || props.superficie || props.Shape_Area || props.SHAPE_AREA || '-';
         const planoVal = props.PLANO || props.plano || props.imagen || '-';
@@ -810,6 +795,7 @@ function configurarClickAtributos(layer, tipoOrigen) {
         let nombrePlanoLimpio = planoVal !== '-' ? String(planoVal).split(/[\\/]/).pop().replace(/\.[^/.]+$/, "").trim() + ".jpg" : '-';
         let carpetaSeleccionada = (tipoOrigen === 'fincas') ? RUTA_PLANOS_BARRIO_NORTE : RUTA_PLANOS_GENERAL; 
 
+        // Generar la tabla HTML para el panel flotante
         const contenidoHtml = `
             <table style="width: 100%; border-collapse: collapse; font-size: 11px; margin-bottom: 10px; color: #333;">
                 <thead><tr><th style="padding:4px; background:#dfe6e9;">Campo</th><th style="padding:4px; background:#dfe6e9;">Valor (${tipoOrigen.toUpperCase()})</th></tr></thead>
@@ -836,6 +822,7 @@ function configurarClickAtributos(layer, tipoOrigen) {
             </div>
         `;
 
+        // Mostrar el panel flotante de atributos con los datos correspondientes
         const panel = document.getElementById('attributeFloatingPanel');
         const bodyContent = document.getElementById('attributePanelBody');
         if (panel && bodyContent) {
