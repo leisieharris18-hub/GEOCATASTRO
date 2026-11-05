@@ -790,7 +790,7 @@ function configurarClickAtributos(layer, tipoOrigen) {
         const folio = props.FOLIO || props.folio || '-';
         const codUbicacion = props.CODIGO_UBICACION || props.COD_UBICACION || props.codigo_ubicacion || props.ubicacion || '-';
         const propietario = props.PROPIETARIO || props.propietario || '-';
-        const superficie = props.SUPERFICIE || props.superficie || props.Shape_Area || props.SHAPE_AREA || '-';
+        const superficie = props.SUPERFICIE || props.superficie || '-';
         const planoVal = props.PLANO || props.plano || props.imagen || '-';
 
         let nombrePlanoLimpio = planoVal !== '-' ? String(planoVal).split(/[\\/]/).pop().replace(/\.[^/.]+$/, "").trim() + ".jpg" : '-';
