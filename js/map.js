@@ -559,47 +559,41 @@ window.buscarCatastro = function() {
 };
 
 window.limpiarFiltroCatastro = function() {
-    // 1. Limpiar campos de texto del formulario de búsqueda
+    // 1. Vaciar campos de texto
     ['inputFinca', 'inputTomo', 'inputFolio', 'inputUbicacion', 'inputPropietario'].forEach(id => {
         const el = document.getElementById(id); 
-        if(el) el.value = '';
+        if (el) el.value = '';
     });
 
-    // 2. Remover la capa de resultados de búsqueda seleccionados
+    // 2. Remover capa de búsqueda general
     if (capaSeleccionadaGeoJSON) {
         map.removeLayer(capaSeleccionadaGeoJSON);
         capaSeleccionadaGeoJSON = null;
     }
 
-    // 3. Remover capa temporal de clics si existe
-    if (typeof capaClicTemporal !== 'undefined' && capaClicTemporal) {
-        map.removeLayer(capaClicTemporal);
-        capaClicTemporal = null;
+    // 3. NUEVO: Restablecer el estilo y deseleccionar el predio marcado por clic individual
+    if (typeof capaPredioClicSeleccionado !== 'undefined' && capaPredioClicSeleccionado) {
+        if (typeof capaPredioClicSeleccionado.setStyle === 'function') {
+            capaPredioClicSeleccionado.setStyle({ color: '#e67e22', weight: 2, fillOpacity: 0.3 });
+        }
+        capaPredioClicSeleccionado = null;
     }
 
-    // 4. Eliminar todos los pines y marcadores de coordenadas creados en el mapa
+    // 4. Limpiar marcadores de coordenadas y cerrar paneles
     if (window.listaMarcadoresCoordenadas && window.listaMarcadoresCoordenadas.length > 0) {
         window.listaMarcadoresCoordenadas.forEach(marker => {
-            if (marker && map.hasLayer(marker)) {
-                map.removeLayer(marker);
-            }
+            if (marker && map.hasLayer(marker)) map.removeLayer(marker);
         });
         window.listaMarcadoresCoordenadas = [];
     }
 
-    // 5. Cerrar popups activos en el mapa
     map.closePopup();
 
-    // 6. Ocultar paneles flotantes (Atributos y Street View)
     const panelAtributos = document.getElementById('attributeFloatingPanel');
     if (panelAtributos) panelAtributos.style.display = 'none';
 
     const panelSV = document.getElementById('streetViewPanel');
     if (panelSV) panelSV.style.display = 'none';
-
-    // 7. Ocultar cualquier alerta flotante activa
-    const alertaDiv = document.getElementById('alertaCatastro');
-    if (alertaDiv) alertaDiv.style.display = 'none';
 };
 
 
@@ -666,13 +660,39 @@ document.addEventListener("DOMContentLoaded", function() {
 });
 
 // ============================================================================
-// ETAPA 9: INTERACCIÓN Y PANEL FLOTANTE DE ATRIBUTOS (CLIC EN MAPA)
+// ETAPA 9: INTERACCIÓN, SELECCIÓN VISUAL Y PANEL FLOTANTE DE ATRIBUTOS (CLIC EN MAPA)
 // ============================================================================
+
+// Variable global para mantener el control de la capa o predio seleccionado actualmente mediante clic
+let capaPredioClicSeleccionado = null;
 
 function configurarClickAtributos(layer, tipoOrigen) {
     layer.on('click', function(e) {
         if (tipoOrigen === 'fincas') {
             if (e.originalEvent) L.DomEvent.stopPropagation(e.originalEvent);
+        }
+
+        // 1. SELECCIÓN VISUAL: Si ya había un predio seleccionado por clic, restaurar su estilo original
+        if (capaPredioClicSeleccionado) {
+            if (typeof capaPredioClicSeleccionado.setStyle === 'function') {
+                // Restablecer según pertenezca a fincas o catastro
+                if (capaPredioClicSeleccionado.options && capaPredioClicSeleccionado.options.color === '#ff007f') {
+                    // Si era de fincas (naranja original: #e67e22)
+                    capaPredioClicSeleccionado.setStyle({ color: '#e67e22', weight: 2, fillOpacity: 0.3 });
+                } else {
+                    // Si era de catastro (cian original: #00cec9)
+                    capaPredioClicSeleccionado.setStyle({ color: '#00cec9', weight: 2, fillOpacity: 0, fill: false });
+                }
+            }
+        }
+
+        // 2. Marcar el nuevo predio como seleccionado y aplicarle estilo destacado (color rosado fuerte)
+        capaPredioClicSeleccionado = e.target;
+        if (typeof capaPredioClicSeleccionado.setStyle === 'function') {
+            capaPredioClicSeleccionado.setStyle({ color: '#ff007f', weight: 4, fillOpacity: 0.5, fill: true });
+            if (capaPredioClicSeleccionado.bringToFront) {
+                capaPredioClicSeleccionado.bringToFront();
+            }
         }
 
         const props = e.target.feature.properties || {};
@@ -713,7 +733,7 @@ function configurarClickAtributos(layer, tipoOrigen) {
             <div style="text-align: center; font-weight: bold; font-size:12px; margin-bottom: 5px;">Vista del Plano:</div>
             <div style="background: #f8f9fa; border: 1px solid #dfe6e9; min-height: 100px; display: flex; align-items: center; justify-content: center;">
                 ${nombrePlanoLimpio !== '-.jpg' ? `
-                    <img id="planoImgPopup" src="${carpetaSeleccionada}${nombrePlanoLimpio}" style="width: 100%; cursor: pointer;" onclick="window.open(this.src, '_blank')" onerror="this.src='${RUTA_PLANOS_BARRIO_NORTE}${nombrePlanoLimpio}'; this.onerror=function(){this.style.display='none'; this.nextElementSibling.style.display='block';};" />
+                    <img id="planoImgPopup" src="${carpetaSeleccionada}${nombrePlanoLimpio}" style="width: 100%; cursor: pointer;" onclick="window.open(this.src, '_blank')" onerror="this.src='${RUTA_PLANOS_BARRIO_NORTE}${nombrePlanoLimgio}'; this.onerror=function(){this.style.display='none'; this.nextElementSibling.style.display='block';};" />
                     <div style="display:none; color:red; font-size:10px; padding:10px;">⚠️ Plano no encontrado en la carpeta correspondiente: <br><b>${nombrePlanoLimpio}</b></div>
                 ` : '<span style="font-size:11px; color:#b2bec3;">No hay plano asociado</span>'}
             </div>
@@ -727,7 +747,6 @@ function configurarClickAtributos(layer, tipoOrigen) {
         }
     });
 }
-
 
 // ============================================================================
 // ETAPA 10: MANEJO DEL PANEL FLOTANTE (DRAG & DROP Y CIERRE)
