@@ -1171,3 +1171,75 @@ body.dark-mode #attributeFloatingPanel,
 body.dark-mode #attributeFloatingPanel div {
     color: #e8f6ff;
 }
+
+
+/* ==========================================================================
+   ESTILOS Y COMPATIBILIDAD DARK MODE PARA PANELES FLOTANTES
+   ========================================================================== */
+
+/* Estilos base por defecto (Modo Claro) para los paneles flotantes */
+#coordFloatingPanel, #attributeFloatingPanel {
+    background: #ffffff;
+    color: #333333;
+    border: 1px solid #cbd5e1;
+}
+
+#coordPanelHeader, #attributePanelHeader {
+    background: #2d3436;
+    color: #ffffff;
+}
+
+#minimizeCoordBtn, #closeCoordBtn, #closeAttributeBtn {
+    background: none;
+    border: none;
+    color: #ffffff;
+    font-size: 18px;
+    cursor: pointer;
+    font-weight: bold;
+    line-height: 1;
+    transition: color 0.2s ease;
+}
+
+#minimizeCoordBtn:hover, #closeCoordBtn:hover, #closeAttributeBtn:hover {
+    color: #e74c3c;
+}
+
+/* Adaptación automática para el Modo Oscuro */
+body.dark-mode #coordFloatingPanel,
+body.dark-mode #attributeFloatingPanel {
+    background: #002c3c !important;
+    color: #e8f6ff !important;
+    border: 1px solid #12657a !important;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.6) !important;
+}
+
+body.dark-mode #coordPanelHeader,
+body.dark-mode #attributePanelHeader {
+    background: #001f2b !important;
+    color: #ffffff !important;
+    border-bottom: 1px solid #12657a !important;
+}
+
+body.dark-mode #minimizeCoordBtn,
+body.dark-mode #closeCoordBtn,
+body.dark-mode #closeAttributeBtn {
+    color: #ffffff !important;
+}
+
+body.dark-mode #minimizeCoordBtn:hover,
+body.dark-mode #closeCoordBtn:hover,
+body.dark-mode #closeAttributeBtn:hover {
+    color: #ff7675 !important;
+}
+
+/* Asegurar legibilidad en las tablas internas de los paneles flotantes (modo oscuro) */
+body.dark-mode #attributeFloatingPanel table th {
+    background: #003b4d !important;
+    color: #ffffff !important;
+    border-color: #12657a !important;
+}
+
+body.dark-mode #attributeFloatingPanel table td {
+    border-color: #12657a !important;
+    color: #e8f6ff !important;
+}
