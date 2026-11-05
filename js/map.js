@@ -164,7 +164,7 @@ document.addEventListener("DOMContentLoaded", function() {
 
 
 // ============================================================================
-// ETAPA 3: NAVEGACIÓN 3D Y STREET VIEW
+// ETAPA 3: NAVEGACIÓN 3D, STREET VIEW Y VISOR INTERACTIVO DE PLANOS CON ZOOM
 // ============================================================================
 
 const NorthArrowControl = L.Control.extend({
@@ -194,6 +194,144 @@ window.abrirStreetView = function(lat, lng) {
         iframe.src = `https://maps.google.com/maps?layer=c&cbll=${lat},${lng}&cbp=12,0,0,0,0&output=svembed`;
         panel.style.display = 'flex';
     }
+};
+
+// Función para abrir el plano en una ventana interactiva con zoom fluido por scroll y arrastre
+window.abrirPlanoConZoom = function(urlImagen) {
+    const ventanaZoom = window.open("", "_blank");
+    if (!ventanaZoom) {
+        alert("Por favor, permita las ventanas emergentes (popups) para ver el plano.");
+        return;
+    }
+
+    ventanaZoom.document.write(`
+        <!DOCTYPE html>
+        <html lang="es">
+        <head>
+            <meta charset="UTF-8">
+            <title>Visor de Plano Catastral - Zoom Interactivo</title>
+            <style>
+                body {
+                    margin: 0;
+                    background-color: #1a1a1a;
+                    height: 100vh;
+                    display: flex;
+                    justify-content: center;
+                    align-items: center;
+                    overflow: hidden;
+                    font-family: sans-serif;
+                }
+                .container {
+                    width: 100%;
+                    height: 100%;
+                    display: flex;
+                    justify-content: center;
+                    align-items: center;
+                    position: relative;
+                    cursor: grab;
+                }
+                .container:active {
+                    cursor: grabbing;
+                }
+                img {
+                    max-width: 90%;
+                    max-height: 90%;
+                    object-fit: contain;
+                    transition: transform 0.1s ease-out;
+                    user-select: none;
+                    box-shadow: 0 5px 25px rgba(0,0,0,0.5);
+                    background: white;
+                }
+                .controls {
+                    position: absolute;
+                    bottom: 20px;
+                    background: rgba(0, 0, 0, 0.75);
+                    padding: 8px 15px;
+                    border-radius: 30px;
+                    color: white;
+                    font-size: 13px;
+                    display: flex;
+                    gap: 15px;
+                    align-items: center;
+                    box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+                }
+                button {
+                    background: #0984e3;
+                    color: white;
+                    border: none;
+                    padding: 5px 12px;
+                    border-radius: 15px;
+                    cursor: pointer;
+                    font-weight: bold;
+                }
+                button:hover {
+                    background: #74b9ff;
+                }
+            </style>
+        </head>
+        <body>
+            <div class="container" id="visorContainer">
+                <img id="planoZoomImg" src="${urlImagen}" alt="Plano Catastral">
+            </div>
+            <div class="controls">
+                <span>Use la <b>rueda del ratón</b> para hacer Zoom y arrastre para mover.</span>
+                <button onclick="resetZoom()">Restablecer</button>
+            </div>
+
+            <script>
+                const img = document.getElementById('planoZoomImg');
+                const container = document.getElementById('visorContainer');
+                let scale = 1;
+                let panning = false;
+                let pointX = 0;
+                let pointY = 0;
+                let startX = 0;
+                let startY = 0;
+
+                function setTransform() {
+                    img.style.transform = 'translate(' + pointX + 'px, ' + pointY + 'px) scale(' + scale + ')';
+                }
+
+                container.addEventListener('wheel', function(e) {
+                    e.preventDefault();
+                    const zoomIntensity = 0.1;
+                    if (e.deltaY < 0) {
+                        scale *= (1 + zoomIntensity);
+                    } else {
+                        scale /= (1 + zoomIntensity);
+                        if (scale < 1) scale = 1;
+                    }
+                    setTransform();
+                });
+
+                container.addEventListener('mousedown', function(e) {
+                    panning = true;
+                    startX = e.clientX - pointX;
+                    startY = e.clientY - pointY;
+                });
+
+                window.addEventListener('mousemove', function(e) {
+                    if (!panning) return;
+                    pointX = e.clientX - startX;
+                    pointY = e.clientY - startY;
+                    setTransform();
+                });
+
+                window.addEventListener('mouseup', function() {
+                    panning = false;
+                });
+
+                function resetZoom() {
+                    scale = 1;
+                    pointX = 0;
+                    pointY = 0;
+                    setTransform();
+                }
+            </script>
+        </body>
+        </html>
+    `);
+    ventanaZoom.document.close();
 };
 
 const StreetViewControl = L.Control.extend({
@@ -611,7 +749,6 @@ window.buscarCatastro = function() {
     if (encontrados.length > 0) {
         if (capaSeleccionadaGeoJSON) map.removeLayer(capaSeleccionadaGeoJSON);
         
-        // Asignar un estilo translúcido ligero o transparente para que no sature visualmente el mapa en bloque
         capaSeleccionadaGeoJSON = L.geoJSON({ type: "FeatureCollection", features: encontrados }, {
             style: { color: '#ff007f', weight: 2, fillOpacity: 0.1, fill: true }
         }).addTo(map);
@@ -624,17 +761,14 @@ window.buscarCatastro = function() {
 };
 
 window.limpiarFiltroCatastro = function() {
-    // 1. Vaciar todos los campos de texto del formulario de gestión catastral
     ['inputFinca', 'inputTomo', 'inputFolio', 'inputUbicacion', 'inputPropietario'].forEach(id => {
         const el = document.getElementById(id); 
         if (el) el.value = '';
     });
 
-    // 2. Vaciar también el buscador de planos manual
     const inputPlano = document.getElementById('inputPlanoSearch');
     if (inputPlano) inputPlano.value = '';
 
-    // 3. Restablecer el visor de imágenes de planos a su estado inicial
     const imgElement = document.getElementById('planoImg');
     const placeholder = document.getElementById('textoPlanoPlaceholder');
     if (imgElement) {
@@ -646,21 +780,23 @@ window.limpiarFiltroCatastro = function() {
         placeholder.innerText = "Vista previa del plano";
     }
 
-    // 4. Remover la capa de búsqueda general del mapa
     if (capaSeleccionadaGeoJSON) {
         map.removeLayer(capaSeleccionadaGeoJSON);
         capaSeleccionadaGeoJSON = null;
     }
 
-    // 5. Restablecer el estilo y deseleccionar el predio marcado por clic individual
     if (typeof capaPredioClicSeleccionado !== 'undefined' && capaPredioClicSeleccionado) {
         if (typeof capaPredioClicSeleccionado.setStyle === 'function') {
-            capaPredioClicSeleccionado.setStyle({ color: '#e67e22', weight: 2, fillOpacity: 0.3 });
+            const origenActual = capaPredioClicSeleccionado._tipoOrigenOriginal || 'fincas';
+            if (origenActual === 'fincas') {
+                capaPredioClicSeleccionado.setStyle({ color: '#e67e22', weight: 2, fillOpacity: 0.3, fill: true });
+            } else {
+                capaPredioClicSeleccionado.setStyle({ color: '#00cec9', weight: 2, fillOpacity: 0.1, fill: true });
+            }
         }
         capaPredioClicSeleccionado = null;
     }
 
-    // 6. Limpiar marcadores de coordenadas y cerrar todos los paneles flotantes
     if (window.listaMarcadoresCoordenadas && window.listaMarcadoresCoordenadas.length > 0) {
         window.listaMarcadoresCoordenadas.forEach(marker => {
             if (marker && map.hasLayer(marker)) map.removeLayer(marker);
@@ -680,7 +816,6 @@ window.limpiarFiltroCatastro = function() {
     const panelSV = document.getElementById('streetViewPanel');
     if (panelSV) panelSV.style.display = 'none';
 
-    // Ocultar alertas si estaban activas
     const alertaDiv = document.getElementById('alertaCatastro');
     if (alertaDiv) alertaDiv.style.display = 'none';
 
@@ -717,7 +852,7 @@ window.buscarPlanoManual = function() {
         imgElement.style.display = 'block';
         placeholder.style.display = 'none';
         imgElement.src = rutaImagen;
-        imgElement.onclick = () => window.open(imgElement.src, '_blank');
+        imgElement.onclick = () => window.abrirPlanoConZoom(imgElement.src);
         
         imgElement.onerror = function() {
             this.src = RUTA_PLANOS_BARRIO_NORTE + valorInput + ".jpg";
@@ -748,6 +883,7 @@ document.addEventListener("DOMContentLoaded", function() {
     }
 });
 
+
 // ============================================================================
 // ETAPA 9: INTERACCIÓN, SELECCIÓN VISUAL Y PANEL FLOTANTE DE ATRIBUTOS
 // ============================================================================
@@ -755,23 +891,22 @@ document.addEventListener("DOMContentLoaded", function() {
 let capaPredioClicSeleccionado = null;
 
 function configurarClickAtributos(layer, tipoOrigen) {
+    // Guardamos explícitamente el origen dentro de la capa para recordarlo siempre
+    layer._tipoOrigenOriginal = tipoOrigen;
+
     layer.on('click', function(e) {
         L.DomEvent.stopPropagation(e);
 
-        // Si ya había un predio seleccionado previamente, restaurar su color original exacto según su origen
+        // Si ya había un predio seleccionado previamente, restaurar su color original exacto según su origen guardado
         if (capaPredioClicSeleccionado) {
             if (typeof capaPredioClicSeleccionado.setStyle === 'function') {
-                // Verificamos estrictamente a qué capa pertenecía el predio anterior
-                const esFincaAnterior = capaPredioClicSeleccionado.feature && (
-                    capaPredioClicSeleccionado.feature.properties.FINCA || 
-                    capaPredioClicSeleccionado.feature.properties.finca
-                );
+                const origenAnterior = capaPredioClicSeleccionado._tipoOrigenOriginal || 'fincas';
 
-                if (esFincaAnterior) {
-                    // Restaurar a naranja original de Fincas
+                if (origenAnterior === 'fincas') {
+                    // Restaurar rigurosamente a naranja original de Fincas
                     capaPredioClicSeleccionado.setStyle({ color: '#e67e22', weight: 2, fillOpacity: 0.3, fill: true });
                 } else {
-                    // Restaurar a celeste original de Catastro
+                    // Restaurar rigurosamente a celeste original de Catastro
                     capaPredioClicSeleccionado.setStyle({ color: '#00cec9', weight: 2, fillOpacity: 0.1, fill: true });
                 }
             }
@@ -779,6 +914,8 @@ function configurarClickAtributos(layer, tipoOrigen) {
 
         // Marcar el nuevo predio seleccionado y pintarlo de rosado brillante
         capaPredioClicSeleccionado = e.target;
+        capaPredioClicSeleccionado._tipoOrigenOriginal = tipoOrigen; // Asegurar registro
+
         if (typeof capaPredioClicSeleccionado.setStyle === 'function') {
             capaPredioClicSeleccionado.setStyle({ color: '#ff007f', weight: 4, fillOpacity: 0.5, fill: true });
             if (capaPredioClicSeleccionado.bringToFront) {
@@ -789,7 +926,7 @@ function configurarClickAtributos(layer, tipoOrigen) {
         const props = e.target.feature.properties || {};
         const centroide = (typeof e.target.getBounds === 'function') ? e.target.getBounds().getCenter() : e.latlng;
 
-        // Lectura de atributos segura (sin Shape_Area)
+        // Lectura de atributos estricta (sin Shape_Area)
         const finca = props.FINCA || props.finca || '-';
         const tomo = props.TOMO || props.tomo || '-';
         const folio = props.FOLIO || props.folio || '-';
@@ -821,7 +958,7 @@ function configurarClickAtributos(layer, tipoOrigen) {
             <div style="text-align: center; font-weight: bold; font-size:12px; margin-bottom: 5px;">Vista del Plano:</div>
             <div style="background: #f8f9fa; border: 1px solid #dfe6e9; min-height: 100px; display: flex; align-items: center; justify-content: center;">
                 ${nombrePlanoLimpio !== '-.jpg' ? `
-                    <img id="planoImgPopup" src="${carpetaSeleccionada}${nombrePlanoLimpio}" style="width: 100%; cursor: pointer;" onclick="window.open(this.src, '_blank')" onerror="this.src='${RUTA_PLANOS_BARRIO_NORTE}${nombrePlanoLimpio}'; this.onerror=function(){this.style.display='none'; this.nextElementSibling.style.display='block';};" />
+                    <img id="planoImgPopup" src="${carpetaSeleccionada}${nombrePlanoLimpio}" style="width: 100%; cursor: pointer;" onclick="window.abrirPlanoConZoom(this.src)" onerror="this.src='${RUTA_PLANOS_BARRIO_NORTE}${nombrePlanoLimpio}'; this.onerror=function(){this.style.display='none'; this.nextElementSibling.style.display='block';};" />
                     <div style="display:none; color:red; font-size:10px; padding:10px;">⚠️ Plano no encontrado en la carpeta correspondiente: <br><b>${nombrePlanoLimpio}</b></div>
                 ` : '<span style="font-size:11px; color:#b2bec3;">No hay plano asociado</span>'}
             </div>
@@ -835,6 +972,7 @@ function configurarClickAtributos(layer, tipoOrigen) {
         }
     });
 }
+
 
 // ============================================================================
 // ETAPA 10: MANEJO DEL PANEL FLOTANTE DE ATRIBUTOS
@@ -857,7 +995,12 @@ document.addEventListener('DOMContentLoaded', function() {
 
             if (typeof capaPredioClicSeleccionado !== 'undefined' && capaPredioClicSeleccionado) {
                 if (typeof capaPredioClicSeleccionado.setStyle === 'function') {
-                    capaPredioClicSeleccionado.setStyle({ color: '#e67e22', weight: 2, fillOpacity: 0.3 });
+                    const origenActual = capaPredioClicSeleccionado._tipoOrigenOriginal || 'fincas';
+                    if (origenActual === 'fincas') {
+                        capaPredioClicSeleccionado.setStyle({ color: '#e67e22', weight: 2, fillOpacity: 0.3, fill: true });
+                    } else {
+                        capaPredioClicSeleccionado.setStyle({ color: '#00cec9', weight: 2, fillOpacity: 0.1, fill: true });
+                    }
                 }
                 capaPredioClicSeleccionado = null;
             }
