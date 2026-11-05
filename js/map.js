@@ -595,12 +595,10 @@ window.buscarCatastro = function() {
             const matches = dataset.features.filter(f => {
                 const p = f.properties || {};
                 
-                // Buscar todas las variantes posibles de nombres de campos en el GeoJSON (minúsculas y mayúsculas)
                 const fInc = String(p.FINCA || p.finca || '').trim().toLowerCase();
                 const tOm = String(p.TOMO || p.tomo || '').trim().toLowerCase();
                 const fOl = String(p.FOLIO || p.folio || '').trim().toLowerCase();
                 
-                // Mapear todas las posibles variantes de el campo de ubicación
                 const uBi = String(
                     p.CODIGO_UBICACION || p.codigo_ubicacion || 
                     p.COD_UBICACION || p.cod_ubicacion || 
@@ -611,7 +609,6 @@ window.buscarCatastro = function() {
 
                 const pRo = String(p.PROPIETARIO || p.propietario || '').trim().toLowerCase();
 
-                // Validación de secuencia exacta consecutiva (.includes)
                 const cumpleFinca = (finca === '' || fInc.includes(finca));
                 const cumpleTomo = (tomo === '' || tOm.includes(tomo));
                 const cumpleFolio = (folio === '' || fOl.includes(folio));
@@ -636,6 +633,52 @@ window.buscarCatastro = function() {
     } else {
         mostrarAlertaCatastro("Sin coincidencias encontradas.", "error");
     }
+};
+
+window.limpiarFiltroCatastro = function() {
+    // 1. Vaciar campos de texto del formulario
+    ['inputFinca', 'inputTomo', 'inputFolio', 'inputUbicacion', 'inputPropietario'].forEach(id => {
+        const el = document.getElementById(id); 
+        if (el) el.value = '';
+    });
+
+    // 2. Remover la capa de búsqueda general del mapa
+    if (capaSeleccionadaGeoJSON) {
+        map.removeLayer(capaSeleccionadaGeoJSON);
+        capaSeleccionadaGeoJSON = null;
+    }
+
+    // 3. Restablecer el estilo y deseleccionar el predio marcado por clic individual
+    if (typeof capaPredioClicSeleccionado !== 'undefined' && capaPredioClicSeleccionado) {
+        if (typeof capaPredioClicSeleccionado.setStyle === 'function') {
+            capaPredioClicSeleccionado.setStyle({ color: '#e67e22', weight: 2, fillOpacity: 0.3 });
+        }
+        capaPredioClicSeleccionado = null;
+    }
+
+    // 4. Limpiar marcadores de coordenadas y cerrar todos los paneles flotantes
+    if (window.listaMarcadoresCoordenadas && window.listaMarcadoresCoordenadas.length > 0) {
+        window.listaMarcadoresCoordenadas.forEach(marker => {
+            if (marker && map.hasLayer(marker)) map.removeLayer(marker);
+        });
+        window.listaMarcadoresCoordenadas = [];
+    }
+    marcadorActivoActual = null;
+
+    map.closePopup();
+
+    const panelAtributos = document.getElementById('attributeFloatingPanel');
+    if (panelAtributos) panelAtributos.style.display = 'none';
+
+    const panelCoord = document.getElementById('coordFloatingPanel');
+    if (panelCoord) panelCoord.style.display = 'none';
+
+    const panelSV = document.getElementById('streetViewPanel');
+    if (panelSV) panelSV.style.display = 'none';
+
+    // Ocultar alerta si estaba activa
+    const alertaDiv = document.getElementById('alertaCatastro');
+    if (alertaDiv) alertaDiv.style.display = 'none';
 };
 
 // ============================================================================
