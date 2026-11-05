@@ -741,7 +741,7 @@ function configurarClickAtributos(layer, tipoOrigen) {
 }
 
 // ============================================================================
-// ETAPA 10: MANEJO DEL PANEL FLOTANTE (DRAG & DROP Y CIERRE)
+// ETAPA 10: MANEJO DEL PANEL FLOTANTE (DRAG & DROP Y CIERRE CON DESELECCIÓN)
 // ============================================================================
 
 document.addEventListener('DOMContentLoaded', function() {
@@ -754,10 +754,19 @@ document.addEventListener('DOMContentLoaded', function() {
         L.DomEvent.disableScrollPropagation(panel);
     }
 
+    // ACCIÓN AL PRESIONAR LA "X" DEL PANEL DE ATRIBUTOS
     if (closeBtn && panel) {
         closeBtn.addEventListener('click', (e) => {
             e.stopPropagation();
             panel.style.display = 'none';
+
+            // Deseleccionar y restaurar el color del predio en el mapa al cerrar el panel
+            if (typeof capaPredioClicSeleccionado !== 'undefined' && capaPredioClicSeleccionado) {
+                if (typeof capaPredioClicSeleccionado.setStyle === 'function') {
+                    capaPredioClicSeleccionado.setStyle({ color: '#e67e22', weight: 2, fillOpacity: 0.3 });
+                }
+                capaPredioClicSeleccionado = null;
+            }
         });
     }
 
@@ -790,7 +799,6 @@ document.addEventListener('DOMContentLoaded', function() {
         document.addEventListener('mouseup', () => { isDragging = false; });
     }
 });
-
 
 // ============================================================================
 // ETAPA 11: SOPORTE GLOBAL DE TECLA ENTER PARA BÚSQUEDAS
@@ -837,4 +845,77 @@ document.addEventListener("DOMContentLoaded", function() {
             });
         }
     });
+});
+
+// ============================================================================
+// ETAPA 12: MANEJO DEL PANEL FLOTANTE DE COORDENADAS (MINIMIZAR, CERRAR Y DRAG)
+// ============================================================================
+
+document.addEventListener('DOMContentLoaded', function() {
+    const coordPanel = document.getElementById('coordFloatingPanel');
+    const coordHeader = document.getElementById('coordPanelHeader');
+    const minimizeBtn = document.getElementById('minimizeCoordBtn');
+    const closeCoordBtn = document.getElementById('closeCoordBtn');
+
+    if (coordPanel) {
+        L.DomEvent.disableClickPropagation(coordPanel);
+        L.DomEvent.disableScrollPropagation(coordPanel);
+    }
+
+    // 1. MINIMIZAR (−): Oculta el panel pero mantiene el marcador intacto en el mapa
+    if (minimizeBtn && coordPanel) {
+        minimizeBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            coordPanel.style.display = 'none';
+            // El marcador sigue activo en el mapa. Al hacerle clic de nuevo, se reabre.
+        });
+    }
+
+    // 2. CERRAR (×): Elimina definitivamente el marcador del mapa y oculta el panel
+    if (closeCoordBtn && coordPanel) {
+        closeCoordBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            coordPanel.style.display = 'none';
+
+            if (marcadorActivoActual) {
+                // Remover del mapa
+                if (map.hasLayer(marcadorActivoActual)) {
+                    map.removeLayer(marcadorActivoActual);
+                }
+                // Remover del arreglo global
+                window.listaMarcadoresCoordenadas = window.listaMarcadoresCoordenadas.filter(m => m !== marcadorActivoActual);
+                marcadorActivoActual = null;
+            }
+        });
+    }
+
+    // 3. DRAG & DROP (Arrastrar el panel por la pantalla)
+    if (coordPanel && coordHeader) {
+        let isDragging = false;
+        let startX = 0, startY = 0, initialLeft = 0, initialTop = 0;
+
+        coordHeader.addEventListener('mousedown', function(e) {
+            if (e.target.closest('button')) return; // Evitar arrastrar si se hace clic en minimizar o cerrar
+            isDragging = true;
+            startX = e.clientX;
+            startY = e.clientY;
+            const rect = coordPanel.getBoundingClientRect();
+            initialLeft = rect.left;
+            initialTop = rect.top;
+
+            coordPanel.style.position = 'fixed';
+            coordPanel.style.left = initialLeft + 'px';
+            coordPanel.style.top = initialTop + 'px';
+            coordPanel.style.transform = 'none';
+            e.preventDefault();
+        });
+
+        document.addEventListener('mousemove', function(e) {
+            if (!isDragging) return;
+            coordPanel.style.left = (initialLeft + (e.clientX - startX)) + 'px';
+            coordPanel.style.top = (initialTop + (e.clientY - startY)) + 'px';
+        });
+
+        document.addEventListener('mouseup', () => { isDragging = false; });
+    }
 });
