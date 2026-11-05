@@ -42,12 +42,11 @@ const layerControl = L.control.layers(baseMaps, overlayMaps).addTo(map);
 
 
 // ============================================================================
-// ETAPA 1.5: CARGA, CONVERSIÓN UTM Y ENFOQUE AUTOMÁTICO DE DATOS ARCGIS
+// ETAPA 1.5: CARGA, CONVERSIÓN UTM Y CONFIGURACIÓN DE CAPAS GEOGRÁFICAS
 // ============================================================================
 
 document.addEventListener("DOMContentLoaded", function() {
 
-    // Definir la proyección UTM Zona 17N (utilizada en Panamá) y WGS84
     proj4.defs("EPSG:32617", "+proj=utm +zone=17 +datum=WGS84 +units=m +no_defs");
 
     function adaptarFormatoArcGIS(rawData) {
@@ -83,7 +82,7 @@ document.addEventListener("DOMContentLoaded", function() {
         return { type: "FeatureCollection", features: featuresConvertidas };
     }
 
-   // 1. Cargar Catastro (Se asigna fill: true con fillOpacity: 0 para que toda el área interna sea clickeable)
+    // 1. Cargar Catastro (Capa celeste inferior con interactividad completa)
     fetch('CATASTRALESC3.json')
         .then(res => {
             if (!res.ok) throw new Error("No se pudo cargar CATASTRALESC3.json");
@@ -94,7 +93,7 @@ document.addEventListener("DOMContentLoaded", function() {
             datosCatastroGlobal = dataLimpia;
             
             capaCatastroLeaflet = L.geoJSON(dataLimpia, {
-                style: { color: '#00cec9', weight: 2, fillOpacity: 0, fill: true },
+                style: { color: '#00cec9', weight: 2, fillOpacity: 0.1, fill: true },
                 onEachFeature: function(feature, layer) {
                     configurarClickAtributos(layer, 'catastro');
                 }
@@ -104,7 +103,7 @@ document.addEventListener("DOMContentLoaded", function() {
         })
         .catch(err => console.error("Error en Catastro:", err));
 
-    // 2. Cargar Fincas (Prioridad superior)
+    // 2. Cargar Fincas (Capa naranja superior con prioridad de selección)
     fetch('FINCAS.json')
         .then(res => {
             if (!res.ok) throw new Error("No se pudo cargar FINCAS.json");
@@ -115,7 +114,7 @@ document.addEventListener("DOMContentLoaded", function() {
             datosFincasGlobal = dataLimpia;
             
             capaFincasLeaflet = L.geoJSON(dataLimpia, {
-                style: { color: '#e67e22', weight: 2, fillOpacity: 0.3 },
+                style: { color: '#e67e22', weight: 2, fillOpacity: 0.3, fill: true },
                 onEachFeature: function(feature, layer) {
                     configurarClickAtributos(layer, 'fincas');
                 }
@@ -130,7 +129,6 @@ document.addEventListener("DOMContentLoaded", function() {
         if (map) map.invalidateSize();
     }, 250);
 });
-
 
 // ============================================================================
 // ETAPA 2: INTEGRACIÓN DEL MODO OSCURO (DARK THEME)
@@ -751,27 +749,45 @@ document.addEventListener("DOMContentLoaded", function() {
 
 
 // ============================================================================
-// ETAPA 9: INTERACCIÓN, SELECCIÓN Y PANEL DE ATRIBUTOS
+// ETAPA 9: INTERACCIÓN, SELECCIÓN VISUAL Y PANEL FLOTANTE DE ATRIBUTOS
 // ============================================================================
 
 let capaPredioClicSeleccionado = null;
 
 function configurarClickAtributos(layer, tipoOrigen) {
     layer.on('click', function(e) {
-        if (tipoOrigen === 'fincas') {
-            if (e.originalEvent) L.DomEvent.stopPropagation(e.originalEvent);
+        // Si el clic viene de la capa celeste, verificamos primero si el usuario hizo clic 
+        // en un punto que también está cubierto por una Finca (naranja). 
+        // Si hay una finca naranja activa en ese mismo punto geográfico, ignoramos el celeste para darle prioridad al naranja.
+        if (tipoOrigen === 'catastro' && capaFincasGlobal && capaFincasLeaflet) {
+            let colisionConFinca = false;
+            capaFincasLeaflet.eachLayer(fincaLayer => {
+                if (typeof fincaLayer.getBounds === 'function' && fincaLayer.getBounds().contains(e.latlng)) {
+                    colisionConFinca = true;
+                }
+            });
+            if (colisionConFinca) {
+                return; // Ignora el celeste porque hay una finca naranja arriba
+            }
         }
 
+        // Detener la propagación normal del evento del mapa
+        L.DomEvent.stopPropagation(e);
+
+        // Restaurar el color del predio previamente seleccionado
         if (capaPredioClicSeleccionado) {
             if (typeof capaPredioClicSeleccionado.setStyle === 'function') {
-                if (capaPredioClicSeleccionado.options && capaPredioClicSeleccionado.options.color === '#ff007f') {
+                const propsAnteriores = capaPredioClicSeleccionado.feature.properties || {};
+                const esFinca = propsAnteriores.FINCA || propsAnteriores.finca;
+                if (esFinca) {
                     capaPredioClicSeleccionado.setStyle({ color: '#e67e22', weight: 2, fillOpacity: 0.3 });
                 } else {
-                    capaPredioClicSeleccionado.setStyle({ color: '#00cec9', weight: 2, fillOpacity: 0, fill: true });
+                    capaPredioClicSeleccionado.setStyle({ color: '#00cec9', weight: 2, fillOpacity: 0.1, fill: true });
                 }
             }
         }
 
+        // Resaltar el nuevo predio seleccionado en color rosado brillante
         capaPredioClicSeleccionado = e.target;
         if (typeof capaPredioClicSeleccionado.setStyle === 'function') {
             capaPredioClicSeleccionado.setStyle({ color: '#ff007f', weight: 4, fillOpacity: 0.5, fill: true });
@@ -788,11 +804,7 @@ function configurarClickAtributos(layer, tipoOrigen) {
         const folio = props.FOLIO || props.folio || '-';
         const codUbicacion = props.CODIGO_UBICACION || props.COD_UBICACION || props.codigo_ubicacion || '-';
         const propietario = props.PROPIETARIO || props.propietario || '-';
-        
-        // PUNTOS 2: Superficie únicamente del campo SUPERFICIE original o guion (—) si no existe
-        const supVal = props.SUPERFICIE !== undefined && props.SUPERFICIE !== null ? props.SUPERFICIE : (props.superficie !== undefined && props.superficie !== null ? props.superficie : '');
-        const superficie = (supVal !== '' && supVal !== '-' && supVal !== null) ? supVal : '—';
-        
+        const superficie = props.SUPERFICIE || props.superficie || props.Shape_Area || props.SHAPE_AREA || '-';
         const planoVal = props.PLANO || props.plano || props.imagen || '-';
 
         let nombrePlanoLimpio = planoVal !== '-' ? String(planoVal).split(/[\\/]/).pop().replace(/\.[^/.]+$/, "").trim() + ".jpg" : '-';
@@ -832,7 +844,6 @@ function configurarClickAtributos(layer, tipoOrigen) {
         }
     });
 }
-
 
 // ============================================================================
 // ETAPA 10: MANEJO DEL PANEL FLOTANTE DE ATRIBUTOS
