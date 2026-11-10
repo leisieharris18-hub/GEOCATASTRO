@@ -964,12 +964,14 @@ window.buscarPlanoManual = function() {
         imgElement.src = rutaImagen;
         imgElement.onclick = () => window.abrirPlanoConZoom(imgElement.src);
         
+        // Intenta primero en PLANOS CATASTRALES, si falla prueba en PLANOS BARRIO NORTE
         imgElement.onerror = function() {
             this.src = RUTA_PLANOS_BARRIO_NORTE + valorInput + ".jpg";
+            // CASO 3: Sin coincidencias en la ventana/módulo de búsqueda de planos
             this.onerror = function() {
                 this.style.display = 'none';
                 placeholder.style.display = 'block';
-                placeholder.innerText = "⚠️ Plano no encontrado en las carpetas";
+                placeholder.innerHTML = '<span style="font-size:11px; color:#e17055; font-weight:600; line-height: 1.4;">No se logró identificar un plano disponible para esta selección.</span>';
             };
         };
     }
@@ -1043,14 +1045,30 @@ function configurarClickAtributos(layer, tipoOrigen) {
         const codUbicacion = props.CODIGO_UBICACION || props.COD_UBICACION || props.codigo_ubicacion || props.ubicacion || '-';
         const propietario = props.PROPIETARIO || props.propietario || '-';
         const superficie = props.SUPERFICIE || props.superficie || '-';
-        const planoVal = props.PLANO || props.plano || props.imagen || '-';
+        const planoVal = props.PLANO || props.plano || props.imagen || '';
 
-        // Validación estricta para evitar rutas vacías o nulas que generen error 404
-        let nombrePlanoLimpio = '-';
-        if (planoVal && planoVal !== '-' && String(planoVal).trim() !== '') {
-            nombrePlanoLimpio = String(planoVal).split(/[\\/]/).pop().replace(/\.[^/.]+$/, "").trim() + ".jpg";
+        const planoStr = String(planoVal).trim();
+        const tieneAtributoPlano = planoStr !== '' && planoStr !== '-' && planoStr.toLowerCase() !== 'null' && planoStr !== '0';
+
+        let nombrePlanoLimpio = '';
+        if (tieneAtributoPlano) {
+            nombrePlanoLimpio = planoStr.split(/[\\/]/).pop().replace(/\.[^/.]+$/, "").trim() + ".jpg";
         }
         let carpetaSeleccionada = (tipoOrigen === 'fincas') ? RUTA_PLANOS_BARRIO_NORTE : RUTA_PLANOS_GENERAL; 
+
+        // Generar HTML del visor de plano según los Casos 1 y 2
+        let htmlContenidoPlano = '';
+
+        if (!tieneAtributoPlano) {
+            // CASO 2: La finca no tiene número de plano catastral registrado
+            htmlContenidoPlano = '<span style="font-size:11px; color:#e17055; font-weight:600; line-height: 1.4;">Sin plano catastral registrado en las bases de datos actuales; puede utilizar como referencia el plano catastral de la manzana.</span>';
+        } else {
+            // CASO 1: Tiene atributo de plano, pero se evaluará si carga la imagen o muestra el mensaje de servidor
+            htmlContenidoPlano = `
+                <img id="planoImgPopup" src="${carpetaSeleccionada}${nombrePlanoLimpio}" style="width: 100%; cursor: pointer; display: block;" onclick="window.abrirPlanoConZoom(this.src)" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';" />
+                <div style="display:none; color:#c0392b; font-size:11px; font-weight:600; padding:5px; line-height: 1.4;">Imagen digital no se encuentra disponible en el servidor.</div>
+            `;
+        }
 
         const contenidoHtml = `
             <table style="width: 100%; border-collapse: collapse; font-size: 11px; margin-bottom: 10px; color: #333;">
@@ -1071,10 +1089,7 @@ function configurarClickAtributos(layer, tipoOrigen) {
 
             <div style="text-align: center; font-weight: bold; font-size:12px; margin-bottom: 5px;">Vista del Plano:</div>
             <div style="background: #f8f9fa; border: 1px solid #dfe6e9; min-height: 90px; display: flex; align-items: center; justify-content: center; padding: 10px; text-align: center; box-sizing: border-box;">
-                ${nombrePlanoLimpio !== '-.jpg' ? `
-                    <img id="planoImgPopup" src="${carpetaSeleccionada}${nombrePlanoLimpio}" style="width: 100%; cursor: pointer;" onclick="window.abrirPlanoConZoom(this.src)" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';" />
-                    <div style="display:none; color:#c0392b; font-size:10px; padding:5px;">⚠️ Plano no encontrado en el servidor: <br><b>${nombrePlanoLimpio}</b></div>
-                ` : '<span style="font-size:11px; color:#e17055; font-weight:600; line-height: 1.4;">⚠️ Sin plano catastral registrado en las bases de datos actuales; puede utilizar como referencia el plano catastral de la manzana.</span>'}
+                ${htmlContenidoPlano}
             </div>
         `;
 
