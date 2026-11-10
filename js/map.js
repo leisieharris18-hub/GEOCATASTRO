@@ -18,27 +18,56 @@ const map = L.map("map", {
     zoomControl: false
 });
 
+// --------------------------------------------------------------------------
+// NIVELES DE CAPAS: FINCAS SIEMPRE POR ENCIMA DE CATASTRO
+// --------------------------------------------------------------------------
+
+// Nivel inferior para los planos catastrales.
+map.createPane("panelCatastro");
+map.getPane("panelCatastro").style.zIndex = "410";
+
+// Nivel superior para las fincas.
+map.createPane("panelFincas");
+map.getPane("panelFincas").style.zIndex = "420";
+
+// Los marcadores y ventanas emergentes conservan los niveles de Leaflet.
+
+// --------------------------------------------------------------------------
+// CONTROLES Y MAPAS BASE
+// --------------------------------------------------------------------------
+
 L.control.zoom({
     position: 'bottomright'
 }).addTo(map);
 
-const osmLayer = L.tileLayer("https://{s}.tile.openstreetmap.fr/hot/{z}/{x}/{y}.png", {
-    maxZoom: 19,
-    attribution: '&copy; OpenStreetMap contributors'
-});
+const osmLayer = L.tileLayer(
+    "https://{s}.tile.openstreetmap.fr/hot/{z}/{x}/{y}.png",
+    {
+        maxZoom: 19,
+        attribution: '&copy; OpenStreetMap contributors'
+    }
+);
 
-const satelliteLayer = L.tileLayer("https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}", {
-    attribution: 'Tiles &copy; Esri'
-});
+const satelliteLayer = L.tileLayer(
+    "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}",
+    {
+        attribution: 'Tiles &copy; Esri'
+    }
+);
 
 osmLayer.addTo(map);
 
-const baseMaps = { 
+const baseMaps = {
     "OpenStreetMap (Humanitario)": osmLayer,
     "Satélite (Esri)": satelliteLayer
 };
+
 const overlayMaps = {};
-const layerControl = L.control.layers(baseMaps, overlayMaps).addTo(map);
+
+const layerControl = L.control.layers(
+    baseMaps,
+    overlayMaps
+).addTo(map);
 
 
 // ============================================================================
@@ -47,86 +76,167 @@ const layerControl = L.control.layers(baseMaps, overlayMaps).addTo(map);
 
 document.addEventListener("DOMContentLoaded", function() {
 
-    proj4.defs("EPSG:32617", "+proj=utm +zone=17 +datum=WGS84 +units=m +no_defs");
-
-    function adaptarFormatoArcGIS(rawData) {
-        if (!rawData) return { type: "FeatureCollection", features: [] };
-
-        const featuresConvertidas = (rawData.features || []).map(f => {
-            let geometriaConvertida = null;
-
-            if (f.geometry && f.geometry.rings) {
-                const ringsTransformados = f.geometry.rings.map(ring => {
-                    return ring.map(coord => {
-                        if (Math.abs(coord[0]) > 180 || Math.abs(coord[1]) > 90) {
-                            const conv = proj4("EPSG:32617", "EPSG:4326", [coord[0], coord[1]]);
-                            return [conv[0], conv[1]];
-                        }
-                        return coord;
-                    });
-                });
-
-                geometriaConvertida = {
-                    type: "Polygon",
-                    coordinates: ringsTransformados
-                };
-            }
-
-            return {
-                type: "Feature",
-                properties: f.attributes || f.properties || {},
-                geometry: geometriaConvertida
-            };
-        });
-
-        return { type: "FeatureCollection", features: featuresConvertidas };
+    if (typeof proj4 === "undefined") {
+        console.error(
+            "No se cargó Proj4js. Verifica que esté incluido antes de map.js."
+        );
+        return;
     }
 
-    // 1. Cargar Catastro (Capa celeste inferior con interactividad completa)
+    proj4.defs(
+        "EPSG:32617",
+        "+proj=utm +zone=17 +datum=WGS84 +units=m +no_defs"
+    );
+
+    // Conserva la conversión utilizada en tu proyecto:
+    // coordenadas métricas en WGS84 / UTM zona 17N.
+    function adaptarFormatoArcGIS(rawData) {
+        if (!rawData) {
+            return {
+                type: "FeatureCollection",
+                features: []
+            };
+        }
+
+        // Conservar GeoJSON que ya esté en longitud y latitud WGS84.
+        if (rawData.type === "FeatureCollection") {
+            return rawData;
+        }
+
+        const featuresConvertidas = (rawData.features || []).map(
+            function(f) {
+                let geometriaConvertida = null;
+
+                if (f.geometry && f.geometry.rings) {
+                    const ringsTransformados = f.geometry.rings.map(
+                        function(ring) {
+                            return ring.map(function(coord) {
+                                if (
+                                    Math.abs(coord[0]) > 180 ||
+                                    Math.abs(coord[1]) > 90
+                                ) {
+                                    return proj4(
+                                        "EPSG:32617",
+                                        "EPSG:4326",
+                                        [coord[0], coord[1]]
+                                    );
+                                }
+
+                                return [coord[0], coord[1]];
+                            });
+                        }
+                    );
+
+                    geometriaConvertida = {
+                        type: "Polygon",
+                        coordinates: ringsTransformados
+                    };
+                }
+
+                return {
+                    type: "Feature",
+                    properties: f.attributes || f.properties || {},
+                    geometry: geometriaConvertida
+                };
+            }
+        );
+
+        return {
+            type: "FeatureCollection",
+            features: featuresConvertidas
+        };
+    }
+
+    // ----------------------------------------------------------------------
+    // CARGAR CATASTRO EN EL NIVEL INFERIOR
+    // ----------------------------------------------------------------------
+
     fetch('CATASTRALESC3.json')
-        .then(res => {
-            if (!res.ok) throw new Error("No se pudo cargar CATASTRALESC3.json");
+        .then(function(res) {
+            if (!res.ok) {
+                throw new Error(
+                    "No se pudo cargar CATASTRALESC3.json: HTTP " +
+                    res.status
+                );
+            }
+
             return res.json();
         })
-        .then(rawData => {
+        .then(function(rawData) {
             const dataLimpia = adaptarFormatoArcGIS(rawData);
+
             datosCatastroGlobal = dataLimpia;
-            
+
             capaCatastroLeaflet = L.geoJSON(dataLimpia, {
-                style: { color: '#00cec9', weight: 2, fillOpacity: 0.1, fill: true },
+                pane: "panelCatastro",
+
+                style: {
+                    color: '#00cec9',
+                    weight: 2,
+                    fillOpacity: 0.1,
+                    fill: true
+                },
+
                 onEachFeature: function(feature, layer) {
                     configurarClickAtributos(layer, 'catastro');
                 }
             }).addTo(map);
-            
-            layerControl.addOverlay(capaCatastroLeaflet, "Catastrales C3");
-        })
-        .catch(err => console.error("Error en Catastro:", err));
 
-    // 2. Cargar Fincas (Capa naranja superior con prioridad de selección)
+            layerControl.addOverlay(
+                capaCatastroLeaflet,
+                "Catastrales C3"
+            );
+        })
+        .catch(function(err) {
+            console.error("Error en Catastro:", err);
+        });
+
+    // ----------------------------------------------------------------------
+    // CARGAR FINCAS EN EL NIVEL SUPERIOR
+    // ----------------------------------------------------------------------
+
     fetch('FINCAS.json')
-        .then(res => {
-            if (!res.ok) throw new Error("No se pudo cargar FINCAS.json");
+        .then(function(res) {
+            if (!res.ok) {
+                throw new Error(
+                    "No se pudo cargar FINCAS.json: HTTP " +
+                    res.status
+                );
+            }
+
             return res.json();
         })
-        .then(rawData => {
+        .then(function(rawData) {
             const dataLimpia = adaptarFormatoArcGIS(rawData);
+
             datosFincasGlobal = dataLimpia;
-            
+
             capaFincasLeaflet = L.geoJSON(dataLimpia, {
-                style: { color: '#e67e22', weight: 2, fillOpacity: 0.3, fill: true },
+                pane: "panelFincas",
+
+                style: {
+                    color: '#e67e22',
+                    weight: 2,
+                    fillOpacity: 0.3,
+                    fill: true
+                },
+
                 onEachFeature: function(feature, layer) {
                     configurarClickAtributos(layer, 'fincas');
                 }
             }).addTo(map);
-            
-            capaFincasLeaflet.bringToFront();
-            layerControl.addOverlay(capaFincasLeaflet, "Fincas");
+
+            layerControl.addOverlay(
+                capaFincasLeaflet,
+                "Fincas"
+            );
         })
-        .catch(err => console.error("Error en FINCAS:", err));
+        .catch(function(err) {
+            console.error("Error en FINCAS:", err);
+        });
 
     setTimeout(function() {
-        if (map) map.invalidateSize();
+        map.invalidateSize();
     }, 250);
 });
 
