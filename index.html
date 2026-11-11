@@ -146,7 +146,7 @@
     <div id="map-container">
         <div id="map"></div>
 
-        <!-- Widget Flotante de Coordenadas (Esquina Inferior Izquierda del Mapa) -->
+        <!-- Widget Flotante de Coordenadas -->
         <div class="coord-widget-container">
             <div class="coord-inputs">
                 <select id="selectTipoCoord" onchange="cambiarFormatoCoordenadas()">
@@ -160,6 +160,14 @@
                 <input type="text" id="inputLat" placeholder="Ej. 9.36" onkeydown="verificarEnterCoordenadas(event)">
                 <button onclick="irACoordenadasPersonalizadas()">Ir</button>
             </div>
+        </div>
+
+        <!-- ============================================================================ -->
+        <!-- ETAPA 4: ALERTA INFORMATIVA FLOTANTE SOBRE EL MAPA (DISCLAIMER)             -->
+        <!-- ============================================================================ -->
+        <div class="map-disclaimer-overlay">
+            <span class="disclaimer-icon">ℹ️</span>
+            <span class="disclaimer-text">Este visor tiene carácter referencial. Al derivar de un levantamiento fotogramétrico, se sugiere cotejar con inscripciones y verificación en campo.</span>
         </div>
 
         <!-- Ventana Modal de Alerta de Coordenadas -->
@@ -183,7 +191,7 @@
             <iframe id="streetViewIframe" src=""></iframe>
         </div>
 
-        <!-- Panel Flotante para Coordenadas (Con Minimizar y Cerrar) -->
+        <!-- Panel Flotante para Coordenadas -->
         <div id="coordFloatingPanel" style="display:none; position:absolute; top:80px; left:20px; width:280px; background:white; z-index:2000; border-radius:8px; box-shadow:0 4px 15px rgba(0,0,0,0.3); overflow:hidden;">
             <div id="coordPanelHeader" style="background:#2d3436; color:white; padding:10px 15px; display:flex; justify-content:space-between; align-items:center; cursor:move;">
                 <span style="font-weight:bold; font-size:13px;">📍 Coordenadas</span>
@@ -206,7 +214,7 @@
     </div>
 
     <!-- ============================================================================ -->
-    <!-- ETAPA 4: PANEL LATERAL DE GESTIÓN CATASTRAL Y CONSULTA DE PLANOS             -->
+    <!-- ETAPA 5: PANEL LATERAL DE GESTIÓN CATASTRAL Y CONSULTA DE PLANOS             -->
     <!-- ============================================================================ -->
     <div class="sidebar-panel">
         <!-- Módulo Didáctico de Gestión Catastral -->
@@ -289,14 +297,6 @@
             </div>
         </div>
     </div>
-</div>
-
-<!-- ============================================================================ -->
-<!-- ETAPA 5: BARRA INFORMATIVA INFERIOR (DISCLAIMER REFERENCIAL)                 -->
-<!-- ============================================================================ -->
-<div class="footer-disclaimer-bar">
-    <span class="disclaimer-icon">ℹ️</span>
-    <span class="disclaimer-text">Visualizador de carácter referencial, se recomienda validar con los registros oficiales y verificación en campo ante cualquier discrepancia.</span>
 </div>
 
 <!-- ============================================================================ -->
