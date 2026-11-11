@@ -971,7 +971,7 @@ window.buscarPlanoManual = function() {
             this.onerror = function() {
                 this.style.display = 'none';
                 placeholder.style.display = 'block';
-                placeholder.innerHTML = '<span style="font-size:11px; color:#e17055; font-weight:600; line-height: 1.4;">No se logró identificar un plano disponible para esta selección.</span>';
+                placeholder.innerHTML = '<span style="font-size:11px; color:#e17055; font-weight:600; line-height: 1.4;">No se logró identificar un plano disponible para esta consulta.</span>';
             };
         };
     }
