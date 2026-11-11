@@ -78,7 +78,7 @@ document.addEventListener("DOMContentLoaded", function() {
 
     if (typeof proj4 === "undefined") {
         console.error(
-            "No se cargó Proj4js. Verifica que esté incluido antes de map.js."
+            "No se cargó Proj4js. Verifica что esté incluido antes de map.js."
         );
         return;
     }
@@ -935,7 +935,7 @@ window.limpiarFiltroCatastro = function() {
 
 
 // ============================================================================
-// ETAPA 8: MÓDULO DE CONSULTA DE PLANOS
+// ETAPA 8: MÓDULO DE CONSULTA DE PLANOS (CASO 3 APLICADO)
 // ============================================================================
 
 window.buscarPlanoManual = function() {
@@ -969,7 +969,8 @@ window.buscarPlanoManual = function() {
             this.onerror = function() {
                 this.style.display = 'none';
                 placeholder.style.display = 'block';
-                placeholder.innerText = "⚠️ Plano no encontrado en las carpetas";
+                // CASO 3: Sin coincidencias en la ventana/módulo de búsqueda de planos
+                placeholder.innerHTML = '<span style="font-size:11px; color:#e17055; font-weight:600; line-height: 1.4;">No se logró identificar un plano disponible para esta selección.</span>';
             };
         };
     }
@@ -1066,10 +1067,10 @@ function configurarClickAtributos(layer, tipoOrigen) {
         let htmlContenidoPlano = '';
 
         if (!tieneAtributoPlano) {
-            // CASO 2: La finca no tiene número de plano catastral registrado (o dice PD)
+            // CASO 2: La finca no tiene número de plano catastral registrado
             htmlContenidoPlano = '<span style="font-size:11px; color:#e17055; font-weight:600; line-height: 1.4;">Sin plano catastral registrado en las bases de datos actuales; puede utilizar como referencia el plano catastral de la manzana.</span>';
         } else {
-            // CASO 1: Tiene atributo de plano válido, evaluamos si la imagen existe en el servidor
+            // CASO 1: Tiene atributo de plano, pero el archivo no está cargado/disponible en el servidor
             htmlContenidoPlano = `
                 <img id="planoImgPopup" src="${carpetaSeleccionada}${nombrePlanoLimpio}" style="width: 100%; cursor: pointer; display: block;" onclick="window.abrirPlanoConZoom(this.src)" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';" />
                 <div style="display:none; color:#c0392b; font-size:11px; font-weight:600; padding:5px; line-height: 1.4;">Imagen digital no se encuentra disponible en el servidor.</div>
