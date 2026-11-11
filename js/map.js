@@ -1043,9 +1043,8 @@ function configurarClickAtributos(layer, tipoOrigen) {
         const codUbicacion = props.CODIGO_UBICACION || props.COD_UBICACION || props.codigo_ubicacion || props.ubicacion || '-';
         const propietario = props.PROPIETARIO || props.propietario || '-';
         const superficie = props.SUPERFICIE || props.superficie || '-';
+        
         const planoVal = props.PLANO || props.plano || props.imagen || '';
-
-const planoVal = props.PLANO || props.plano || props.imagen || '';
         const planoStr = String(planoVal).trim();
         
         // Validación estricta: Ignora vacíos, guiones, nulos y textos como "PD" (Por Determinar)
