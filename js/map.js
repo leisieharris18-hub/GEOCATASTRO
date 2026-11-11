@@ -1287,3 +1287,23 @@ document.addEventListener('DOMContentLoaded', function() {
         document.addEventListener('mouseup', () => { isDragging = false; });
     }
 });
+// ============================================================================
+// ETAPA 13: LÓGICA DEL AVISO LEGAL (3 SEGUNDOS Y CLIC DE APERTURA/CIERRE)
+// ============================================================================
+
+window.toggleAvisoLegal = function() {
+    const contenedorAviso = document.getElementById('avisoLegalContainer');
+    if (contenedorAviso) {
+        contenedorAviso.classList.toggle('minimizado');
+    }
+};
+
+document.addEventListener("DOMContentLoaded", function() {
+    // Temporizador para que a los 3 segundos se minimice automáticamente a solo el botón
+    setTimeout(function() {
+        const contenedorAviso = document.getElementById('avisoLegalContainer');
+        if (contenedorAviso && !contenedorAviso.classList.contains('minimizado')) {
+            contenedorAviso.classList.add('minimizado');
+        }
+    }, 3000);
+});
