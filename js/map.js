@@ -1045,9 +1045,17 @@ function configurarClickAtributos(layer, tipoOrigen) {
         const superficie = props.SUPERFICIE || props.superficie || '-';
         const planoVal = props.PLANO || props.plano || props.imagen || '';
 
+const planoVal = props.PLANO || props.plano || props.imagen || '';
         const planoStr = String(planoVal).trim();
-        // Validación mejorada para ignorar guiones, nulos o cadenas vacías
-        const tieneAtributoPlano = planoStr !== '' && planoStr !== '-' && planoStr !== '--' && planoStr.toLowerCase() !== 'null' && planoStr !== '0' && planoStr.toLowerCase() !== 'undefined';
+        
+        // Validación estricta: Ignora vacíos, guiones, nulos y textos como "PD" (Por Determinar)
+        const tieneAtributoPlano = planoStr !== '' && 
+                                   planoStr !== '-' && 
+                                   planoStr !== '--' && 
+                                   planoStr.toLowerCase() !== 'pd' && 
+                                   planoStr.toLowerCase() !== 'null' && 
+                                   planoStr !== '0' && 
+                                   planoStr.toLowerCase() !== 'undefined';
 
         let nombrePlanoLimpio = '';
         if (tieneAtributoPlano) {
@@ -1055,11 +1063,11 @@ function configurarClickAtributos(layer, tipoOrigen) {
         }
         let carpetaSeleccionada = (tipoOrigen === 'fincas') ? RUTA_PLANOS_BARRIO_NORTE : RUTA_PLANOS_GENERAL; 
 
-        // Generar HTML del visor de plano según los Casos 1 y 2 de forma correcta
+        // Generar HTML del visor de plano según los Casos 1 y 2
         let htmlContenidoPlano = '';
 
         if (!tieneAtributoPlano) {
-            // CASO 2: La finca no tiene número de plano catastral registrado
+            // CASO 2: La finca no tiene número de plano catastral registrado (o dice PD)
             htmlContenidoPlano = '<span style="font-size:11px; color:#e17055; font-weight:600; line-height: 1.4;">Sin plano catastral registrado en las bases de datos actuales; puede utilizar como referencia el plano catastral de la manzana.</span>';
         } else {
             // CASO 1: Tiene atributo de plano válido, evaluamos si la imagen existe en el servidor
