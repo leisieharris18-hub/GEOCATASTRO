@@ -83,7 +83,7 @@
 <!-- ============================================================================ -->
 <header>
     <div class="header-top-row">
-        <!-- BLOQUE IZQUIERDO: Logotipo y Títulos -->
+        <!-- BLOQUE IZQUIERDO -->
         <div class="header-left-group">
             <div class="header-logo-title">
                 <img src="logo.jpeg" alt="Logo Geo-Catastro" class="logo-titulo">
@@ -94,7 +94,7 @@
             </div>
         </div>
 
-        <!-- BLOQUE DERECHO: Acceso de Usuario y Alternador de Modo Oscuro -->
+        <!-- BLOQUE DERECHO: Botón de Acceso + Dark Theme justo debajo -->
         <div class="header-right-group">
             <div class="header-user-container">
                 <div class="admin-access-dropdown">
@@ -106,7 +106,7 @@
                         </div>
                     </button>
                     
-                    <!-- Menú desplegable clásico de sesión -->
+                    <!-- Menú desplegable clásico -->
                     <div id="loginDropdown" class="login-dropdown">
                         <div class="login-form-group">
                             <input type="text" id="loginUser" placeholder="admin" value="admin">
@@ -124,7 +124,7 @@
                     </div>
                 </div>
 
-                <!-- Interruptor directo para Dark Theme -->
+                <!-- Interruptor de Dark Theme posicionado EXACTAMENTE debajo -->
                 <label class="direct-theme-toggle">
                     <input type="checkbox" id="darkThemeToggle">
                     Dark theme
@@ -140,7 +140,7 @@
 </header>
 
 <!-- ============================================================================ -->
-<!-- ETAPA 3: CONTENEDOR PRINCIPAL (MAPA Y PANELES FLOTANTES)                     -->
+<!-- ETAPA 3: CONTENEDOR PRINCIPAL (MAPA, WIDGETS Y PANELES FLOTANTES)           -->
 <!-- ============================================================================ -->
 <div class="main-container">
     <div id="map-container">
@@ -163,14 +163,35 @@
         </div>
 
         <!-- ============================================================================ -->
-        <!-- ETAPA 4: ALERTA INFORMATIVA FLOTANTE SOBRE EL MAPA (DISCLAIMER)             -->
+        <!-- ETAPA 4: WIDGET FLOTANTE INTERACTIVO DE AVISO LEGAL (DISCLAIMER)            -->
         <!-- ============================================================================ -->
-        <div class="map-disclaimer-overlay">
-            <span class="disclaimer-icon">ℹ️</span>
-            <span class="disclaimer-text">Este visor tiene carácter referencial. Al derivar de un levantamiento fotogramétrico, se sugiere cotejar con inscripciones y verificación en campo.</span>
+        <div id="mapDisclaimerWidget" class="disclaimer-widget active" onclick="toggleDisclaimer()">
+            <div class="disclaimer-icon-btn">ℹ️</div>
+            <div class="disclaimer-content-box">
+                <span class="disclaimer-title">Aviso Legal / Referencial</span>
+                <p class="disclaimer-text">Este visor tiene carácter referencial. Al derivar de un levantamiento fotogramétrico, se sugiere cotejar con inscripciones y verificación en campo.</p>
+            </div>
         </div>
 
-        <!-- Ventana Modal de Alerta de Coordenadas -->
+        <script>
+            // Función para alternar el mensaje al hacer clic en el ícono
+            function toggleDisclaimer() {
+                const widget = document.getElementById('mapDisclaimerWidget');
+                widget.classList.toggle('active');
+            }
+
+            // Ocultar automáticamente el mensaje completo después de 3 segundos al cargar la página
+            window.addEventListener('DOMContentLoaded', function() {
+                setTimeout(function() {
+                    const widget = document.getElementById('mapDisclaimerWidget');
+                    if (widget) {
+                        widget.classList.remove('active');
+                    }
+                }, 3000);
+            });
+        </script>
+
+        <!-- VENTANA MODAL PERSONALIZADA DE ALERTA DE COORDENADAS -->
         <div id="customModalCoord" class="modal-coord-overlay">
             <div class="modal-coord-box">
                 <div class="modal-coord-icon">⚠️</div>
@@ -191,7 +212,7 @@
             <iframe id="streetViewIframe" src=""></iframe>
         </div>
 
-        <!-- Panel Flotante para Coordenadas -->
+        <!-- Panel Flotante para Coordenadas (Con Minimizar y Cerrar) -->
         <div id="coordFloatingPanel" style="display:none; position:absolute; top:80px; left:20px; width:280px; background:white; z-index:2000; border-radius:8px; box-shadow:0 4px 15px rgba(0,0,0,0.3); overflow:hidden;">
             <div id="coordPanelHeader" style="background:#2d3436; color:white; padding:10px 15px; display:flex; justify-content:space-between; align-items:center; cursor:move;">
                 <span style="font-weight:bold; font-size:13px;">📍 Coordenadas</span>
@@ -202,7 +223,7 @@
             </div>
             <div id="coordPanelBody" style="padding:15px; max-height:400px; overflow-y:auto;"></div>
         </div>
-
+        
         <!-- Panel Flotante de Atributos del Predio -->
         <div id="attributeFloatingPanel" style="display:none; position:absolute; top:20px; left:20px; width:300px; background:white; z-index:2000; border-radius:8px; box-shadow:0 4px 15px rgba(0,0,0,0.3); overflow:hidden;">
             <div id="attributePanelHeader" style="background:#2d3436; color:white; padding:10px 15px; display:flex; justify-content:space-between; align-items:center; cursor:move;">
