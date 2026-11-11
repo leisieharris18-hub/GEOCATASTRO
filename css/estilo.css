@@ -652,7 +652,7 @@ header h1 {
 
 
 /* ==========================================================================
-   ETAPA 7. WIDGETS Y PANELES FLOTANTES (COORDENADAS, STREET VIEW Y MARCADORES)
+   ETAPA 7. WIDGETS Y PANELES FLOTANTES (COORDENADAS, STREET VIEW Y AVISO LEGAL)
    ========================================================================== */
 .coord-widget-container {
     position: absolute;
@@ -706,6 +706,73 @@ header h1 {
 
 .coord-inputs button:hover { 
     background-color: var(--primary-color); 
+}
+
+/* WIDGET INTERACTIVO DE AVISO LEGAL (DISCLAIMER SUPERIOR DERECHO) */
+#mapDisclaimerWidget {
+    position: absolute;
+    top: 15px;
+    right: 70px; /* Colocado elegantemente a la izquierda del botón de capas */
+    z-index: 1000;
+    background: #ffffff;
+    color: #333333;
+    border-radius: 8px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.25);
+    display: flex;
+    align-items: flex-start;
+    max-width: 42px; /* Estado contraído inicial (solo ícono) */
+    overflow: hidden;
+    cursor: pointer;
+    transition: max-width 0.35s cubic-bezier(0.4, 0, 0.2, 1), padding 0.3s ease;
+    padding: 6px;
+    border: 1px solid #cbd5e1;
+}
+
+.disclaimer-icon-btn {
+    width: 30px;
+    height: 30px;
+    background: #007667;
+    color: #ffffff;
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 16px;
+    flex-shrink: 0;
+}
+
+.disclaimer-content-box {
+    opacity: 0;
+    white-space: normal;
+    width: 260px;
+    padding-left: 10px;
+    transition: opacity 0.25s ease-in-out;
+}
+
+.disclaimer-title {
+    font-size: 11px;
+    font-weight: 800;
+    color: #007667;
+    display: block;
+    margin-bottom: 2px;
+    text-transform: uppercase;
+}
+
+.disclaimer-text {
+    font-size: 11px;
+    line-height: 1.35;
+    color: #475569;
+    margin: 0;
+}
+
+/* Estado Expandido (.active) */
+#mapDisclaimerWidget.active {
+    max-width: 320px;
+    padding: 8px 10px;
+}
+
+#mapDisclaimerWidget.active .disclaimer-content-box {
+    opacity: 1;
 }
 
 #streetViewPanel {
@@ -993,7 +1060,7 @@ body.dark-mode .field-content label {
 }
 
 body.dark-mode .field-content input {
-    background-color: transparent !important; /* Se funde completamente con el fondo de la tarjeta */
+    background-color: transparent !important;
     color: #ffffff !important;
     border: none !important; 
     outline: none !important;
@@ -1101,6 +1168,26 @@ body.dark-mode .coord-inputs select {
     border-color: #216b7e !important;
 }
 
+/* Soporte Dark Mode para el Widget de Aviso Legal */
+body.dark-mode #mapDisclaimerWidget {
+    background: #002c3c !important;
+    border-color: #12657a !important;
+    color: #e8f6ff !important;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.6) !important;
+}
+
+body.dark-mode .disclaimer-icon-btn {
+    background: #008ba3 !important;
+}
+
+body.dark-mode .disclaimer-title {
+    color: #62e4f4 !important;
+}
+
+body.dark-mode .disclaimer-text {
+    color: #cbd5e1 !important;
+}
+
 body.dark-mode .leaflet-control-layers,
 body.dark-mode .leaflet-control-zoom,
 body.dark-mode .leaflet-control-zoom a,
@@ -1156,9 +1243,8 @@ body.dark-mode .sidebar-panel::-webkit-scrollbar-thumb {
 body.dark-mode .sidebar-panel::-webkit-scrollbar-thumb:hover {
     background: #00c4da;
 }
-/* ==========================================================================
-   CORRECCIÓN DE TEXTO EN VISTA DE PLANOS PARA MODO OSCURO
-   ========================================================================== */
+
+/* CORRECCIÓN DE TEXTO EN VISTA DE PLANOS PARA MODO OSCURO */
 body.dark-mode .card-planos .instruccion,
 body.dark-mode .card-planos .placeholder-text,
 body.dark-mode .viewer-plano span,
@@ -1166,7 +1252,6 @@ body.dark-mode .viewer-plano div {
     color: #ffffff !important;
 }
 
-/* Asegurar legibilidad general dentro del panel flotante de atributos en modo oscuro */
 body.dark-mode #attributeFloatingPanel,
 body.dark-mode #attributeFloatingPanel div {
     color: #e8f6ff;
@@ -1176,8 +1261,6 @@ body.dark-mode #attributeFloatingPanel div {
 /* ==========================================================================
    ESTILOS Y COMPATIBILIDAD DARK MODE PARA PANELES FLOTANTES
    ========================================================================== */
-
-/* Estilos base por defecto (Modo Claro) para los paneles flotantes */
 #coordFloatingPanel, #attributeFloatingPanel {
     background: #ffffff;
     color: #333333;
@@ -1204,7 +1287,7 @@ body.dark-mode #attributeFloatingPanel div {
     color: #e74c3c;
 }
 
-/* Adaptación automática para el Modo Oscuro */
+/* Adaptación automática para el Modo Oscuro en Paneles Flotantes */
 body.dark-mode #coordFloatingPanel,
 body.dark-mode #attributeFloatingPanel {
     background: #002c3c !important;
@@ -1232,7 +1315,6 @@ body.dark-mode #closeAttributeBtn:hover {
     color: #ff7675 !important;
 }
 
-/* Asegurar legibilidad en las tablas internas de los paneles flotantes (modo oscuro) */
 body.dark-mode #attributeFloatingPanel table th {
     background: #003b4d !important;
     color: #ffffff !important;
@@ -1241,43 +1323,5 @@ body.dark-mode #attributeFloatingPanel table th {
 
 body.dark-mode #attributeFloatingPanel table td {
     border-color: #12657a !important;
-    color: #e8f6ff !important;
-}
-/* ==========================================================================
-   ALERTA INFORMATIVA FLOTANTE SOBRE EL MAPA
-   ========================================================================== */
-.map-disclaimer-overlay {
-    position: absolute;
-    bottom: 15px;
-    left: 200px; /* Se coloca al lado del selector de coordenadas */
-    right: 70px;  /* Deja espacio para los botones de zoom de la derecha */
-    background: rgba(0, 77, 64, 0.92); /* Verde oscuro institucional semitransparente */
-    color: #ffffff;
-    padding: 6px 12px;
-    border-radius: 6px;
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    font-size: 11px;
-    font-weight: 600;
-    z-index: 1000;
-    box-shadow: 0 3px 10px rgba(0, 0, 0, 0.3);
-    backdrop-filter: blur(2px);
-    pointer-events: none; /* Permite hacer clic a través de la barra hacia el mapa */
-}
-
-.disclaimer-icon {
-    font-size: 13px;
-    flex-shrink: 0;
-}
-
-.disclaimer-text {
-    line-height: 1.2;
-}
-
-/* Adaptación automática para el Modo Oscuro */
-body.dark-mode .map-disclaimer-overlay {
-    background: rgba(0, 36, 49, 0.94) !important;
-    border: 1px solid #007e96;
     color: #e8f6ff !important;
 }
