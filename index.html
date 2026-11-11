@@ -1,6 +1,9 @@
 <!DOCTYPE html>
 <html lang="es">
 
+<!-- ============================================================================ -->
+<!-- ETAPA 1: ENCABEZADO Y CONFIGURACIÓN INICIAL DE ESTILOS                      -->
+<!-- ============================================================================ -->
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -75,9 +78,12 @@
 
 <body>
 
+<!-- ============================================================================ -->
+<!-- ETAPA 2: ENCABEZADO INSTITUCIONAL Y BARRA DE BIENVENIDA                      -->
+<!-- ============================================================================ -->
 <header>
     <div class="header-top-row">
-        <!-- BLOQUE IZQUIERDO -->
+        <!-- BLOQUE IZQUIERDO: Logotipo y Títulos -->
         <div class="header-left-group">
             <div class="header-logo-title">
                 <img src="logo.jpeg" alt="Logo Geo-Catastro" class="logo-titulo">
@@ -88,7 +94,7 @@
             </div>
         </div>
 
-        <!-- BLOQUE DERECHO: Botón de Acceso + Dark Theme justo debajo -->
+        <!-- BLOQUE DERECHO: Acceso de Usuario y Alternador de Modo Oscuro -->
         <div class="header-right-group">
             <div class="header-user-container">
                 <div class="admin-access-dropdown">
@@ -100,7 +106,7 @@
                         </div>
                     </button>
                     
-                    <!-- Menú desplegable clásico (sólo para usuario/contraseña si lo requieres) -->
+                    <!-- Menú desplegable clásico de sesión -->
                     <div id="loginDropdown" class="login-dropdown">
                         <div class="login-form-group">
                             <input type="text" id="loginUser" placeholder="admin" value="admin">
@@ -118,7 +124,7 @@
                     </div>
                 </div>
 
-                <!-- Interruptor de Dark Theme posicionado EXACTAMENTE debajo -->
+                <!-- Interruptor directo para Dark Theme -->
                 <label class="direct-theme-toggle">
                     <input type="checkbox" id="darkThemeToggle">
                     Dark theme
@@ -133,27 +139,30 @@
     </div>
 </header>
 
+<!-- ============================================================================ -->
+<!-- ETAPA 3: CONTENEDOR PRINCIPAL (MAPA Y PANELES FLOTANTES)                     -->
+<!-- ============================================================================ -->
 <div class="main-container">
     <div id="map-container">
         <div id="map"></div>
 
-<!-- Widget Flotante de Coordenadas -->
-<div class="coord-widget-container">
-    <div class="coord-inputs">
-        <select id="selectTipoCoord" onchange="cambiarFormatoCoordenadas()">
-            <option value="DD">DD (Grados Decimales)</option>
-            <option value="UTM">UTM (WGS84 17N)</option>
-            <option value="DMS">GMS (Grados, Min, Seg)</option>
-        </select>
-        <span id="labelX" class="coord-label">Long:</span>
-        <input type="text" id="inputLong" placeholder="Ej. -79.90" onkeydown="verificarEnterCoordenadas(event)">
-        <span id="labelY" class="coord-label">Lat:</span>
-        <input type="text" id="inputLat" placeholder="Ej. 9.36" onkeydown="verificarEnterCoordenadas(event)">
-        <button onclick="irACoordenadasPersonalizadas()">Ir</button>
-    </div>
-</div>
+        <!-- Widget Flotante de Coordenadas (Esquina Inferior Izquierda del Mapa) -->
+        <div class="coord-widget-container">
+            <div class="coord-inputs">
+                <select id="selectTipoCoord" onchange="cambiarFormatoCoordenadas()">
+                    <option value="DD">DD (Grados Decimales)</option>
+                    <option value="UTM">UTM (WGS84 17N)</option>
+                    <option value="DMS">GMS (Grados, Min, Seg)</option>
+                </select>
+                <span id="labelX" class="coord-label">Long:</span>
+                <input type="text" id="inputLong" placeholder="Ej. -79.90" onkeydown="verificarEnterCoordenadas(event)">
+                <span id="labelY" class="coord-label">Lat:</span>
+                <input type="text" id="inputLat" placeholder="Ej. 9.36" onkeydown="verificarEnterCoordenadas(event)">
+                <button onclick="irACoordenadasPersonalizadas()">Ir</button>
+            </div>
+        </div>
 
-        <!-- VENTANA MODAL PERSONALIZADA DE ALERTA DE COORDENADAS -->
+        <!-- Ventana Modal de Alerta de Coordenadas -->
         <div id="customModalCoord" class="modal-coord-overlay">
             <div class="modal-coord-box">
                 <div class="modal-coord-icon">⚠️</div>
@@ -174,7 +183,7 @@
             <iframe id="streetViewIframe" src=""></iframe>
         </div>
 
-<!-- Nuevo Panel Flotante para Coordenadas (Con Minimizar y Cerrar) -->
+        <!-- Panel Flotante para Coordenadas (Con Minimizar y Cerrar) -->
         <div id="coordFloatingPanel" style="display:none; position:absolute; top:80px; left:20px; width:280px; background:white; z-index:2000; border-radius:8px; box-shadow:0 4px 15px rgba(0,0,0,0.3); overflow:hidden;">
             <div id="coordPanelHeader" style="background:#2d3436; color:white; padding:10px 15px; display:flex; justify-content:space-between; align-items:center; cursor:move;">
                 <span style="font-weight:bold; font-size:13px;">📍 Coordenadas</span>
@@ -185,7 +194,6 @@
             </div>
             <div id="coordPanelBody" style="padding:15px; max-height:400px; overflow-y:auto;"></div>
         </div>
-        
 
         <!-- Panel Flotante de Atributos del Predio -->
         <div id="attributeFloatingPanel" style="display:none; position:absolute; top:20px; left:20px; width:300px; background:white; z-index:2000; border-radius:8px; box-shadow:0 4px 15px rgba(0,0,0,0.3); overflow:hidden;">
@@ -197,7 +205,9 @@
         </div>
     </div>
 
-    <!-- PANEL LATERAL -->
+    <!-- ============================================================================ -->
+    <!-- ETAPA 4: PANEL LATERAL DE GESTIÓN CATASTRAL Y CONSULTA DE PLANOS             -->
+    <!-- ============================================================================ -->
     <div class="sidebar-panel">
         <!-- Módulo Didáctico de Gestión Catastral -->
         <div class="card-module-didactic">
@@ -281,12 +291,17 @@
     </div>
 </div>
 
-<!-- ALERTA INFORMATIVA INFERIOR -->
+<!-- ============================================================================ -->
+<!-- ETAPA 5: BARRA INFORMATIVA INFERIOR (DISCLAIMER REFERENCIAL)                 -->
+<!-- ============================================================================ -->
 <div class="footer-disclaimer-bar">
     <span class="disclaimer-icon">ℹ️</span>
     <span class="disclaimer-text">Este visor tiene carácter referencial. Al derivar de un levantamiento fotogramétrico, se sugiere cotejar con inscripciones y verificación en campo.</span>
 </div>
 
+<!-- ============================================================================ -->
+<!-- ETAPA 6: SCRIPTS Y LIBRERÍAS EXTERNAS                                       -->
+<!-- ============================================================================ -->
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/proj4js/2.11.0/proj4.js"></script>
 <script src="js/map.js"></script>
