@@ -1305,5 +1305,5 @@ document.addEventListener("DOMContentLoaded", function() {
         if (contenedorAviso && !contenedorAviso.classList.contains('minimizado')) {
             contenedorAviso.classList.add('minimizado');
         }
-    }, 3000);
+    }, 2000);
 });
