@@ -7,12 +7,77 @@
     <title>Geoportal Catastral - Ciudad de Colón</title>
     <link rel="stylesheet" href="css/estilo.css">
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <style>
+        .custom-emoji-marker {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background: transparent !important;
+            border: none !important;
+        }
+
+        /* Estilo complementario para el botón Limpiar Filtro */
+        .btn-limpiar-filtro {
+            background-color: #c8e6c9;
+            color: #1b5e20;
+            border: none;
+            padding: 6px 14px;
+            border-radius: 20px;
+            font-size: 10px;
+            font-weight: 800;
+            letter-spacing: 0.3px;
+            text-transform: uppercase;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            white-space: nowrap;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12);
+            transition: background-color 0.2s ease, transform 0.1s ease;
+            flex-shrink: 0;
+        }
+
+        .btn-limpiar-filtro:hover {
+            background-color: #a5d6a7;
+            transform: translateY(-1px);
+        }
+
+        .btn-limpiar-filtro:active {
+            transform: translateY(0);
+        }
+
+        .icon-filter-clear {
+            width: 13px;
+            height: 13px;
+            stroke: #1b5e20;
+        }
+
+        /* Estilo directo para el interruptor alineado justo debajo */
+        .header-user-container {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-end;
+            gap: 4px;
+        }
+
+        .direct-theme-toggle {
+            font-size: 9.5px;
+            color: #1a252f;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            cursor: pointer;
+            user-select: none;
+        }
+    </style>
 </head>
 
 <body>
 
 <header>
     <div class="header-top-row">
+        <!-- BLOQUE IZQUIERDO -->
         <div class="header-left-group">
             <div class="header-logo-title">
                 <img src="logo.jpeg" alt="Logo Geo-Catastro" class="logo-titulo">
@@ -23,6 +88,7 @@
             </div>
         </div>
 
+        <!-- BLOQUE DERECHO: Botón de Acceso + Dark Theme justo debajo -->
         <div class="header-right-group">
             <div class="header-user-container">
                 <div class="admin-access-dropdown">
@@ -33,7 +99,26 @@
                             <span class="access-username">HARRIS RODRIGUEZ</span>
                         </div>
                     </button>
+                    
+                    <!-- Menú desplegable clásico (sólo para usuario/contraseña si lo requieres) -->
+                    <div id="loginDropdown" class="login-dropdown">
+                        <div class="login-form-group">
+                            <input type="text" id="loginUser" placeholder="admin" value="admin">
+                        </div>
+                        <div class="login-form-group">
+                            <input type="password" id="loginPass" placeholder="••••••••">
+                        </div>
+                        <div class="login-remember">
+                            <input type="checkbox" id="rememberMe">
+                            <label for="rememberMe">Remember me</label>
+                        </div>
+                        <button id="btnLoginAction" class="login-submit-btn">
+                            🔑 Login
+                        </button>
+                    </div>
                 </div>
+
+                <!-- Interruptor de Dark Theme posicionado EXACTAMENTE debajo -->
                 <label class="direct-theme-toggle">
                     <input type="checkbox" id="darkThemeToggle">
                     Dark theme
@@ -42,6 +127,7 @@
         </div>
     </div>
 
+    <!-- FRANJA INFERIOR DE BIENVENIDA -->
     <div class="sed-welcome-bar">
         <span class="sed-welcome-text">BIENVENIDO A COLÓN DIGITAL, UN ESPACIO PARA CONOCER, CONSULTAR Y EXPLORAR NUESTRO TERRITORIO.</span>
     </div>
@@ -51,36 +137,36 @@
     <div id="map-container">
         <div id="map"></div>
 
-        <!-- ==========================================================
-           WIDGET DE ADVERTENCIA (UBICADO DEBAJO DEL CONTROL DE CAPAS)
-           ========================================================== -->
-        <div id="avisoLegalContainer" class="aviso-legal-container">
-            <button id="btnToggleAviso" class="aviso-legal-btn" onclick="toggleAvisoLegal()">
-                <span class="aviso-icon">ℹ️</span>
-                <span id="avisoTextoCompleto" class="aviso-texto">
-                    Visualizador de carácter referencial, se recomienda validar con los registros oficiales y verificación en campo ante cualquier discrepancia.
-                </span>
-            </button>
-        </div>
+<!-- Widget Flotante de Coordenadas -->
+<div class="coord-widget-container">
+    <div class="coord-inputs">
+        <select id="selectTipoCoord" onchange="cambiarFormatoCoordenadas()">
+            <option value="DD">DD (Grados Decimales)</option>
+            <option value="UTM">UTM (WGS84 17N)</option>
+            <option value="DMS">GMS (Grados, Min, Seg)</option>
+        </select>
+        <span id="labelX" class="coord-label">Long:</span>
+        <input type="text" id="inputLong" placeholder="Ej. -79.90" onkeydown="verificarEnterCoordenadas(event)">
+        <span id="labelY" class="coord-label">Lat:</span>
+        <input type="text" id="inputLat" placeholder="Ej. 9.36" onkeydown="verificarEnterCoordenadas(event)">
+        <button onclick="irACoordenadasPersonalizadas()">Ir</button>
+    </div>
+</div>
 
-        <!-- Widget Flotante de Coordenadas -->
-        <div class="coord-widget-container">
-            <div class="coord-inputs">
-                <select id="selectTipoCoord" onchange="cambiarFormatoCoordenadas()">
-                    <option value="DD">DD (Grados Decimales)</option>
-                    <option value="UTM">UTM (WGS84 17N)</option>
-                    <option value="DMS">GMS (Grados, Min, Seg)</option>
-                </select>
-                <span id="labelX" class="coord-label">Long:</span>
-                <input type="text" id="inputLong" placeholder="Ej. -79.90" onkeydown="verificarEnterCoordenadas(event)">
-                <span id="labelY" class="coord-label">Lat:</span>
-                <input type="text" id="inputLat" placeholder="Ej. 9.36" onkeydown="verificarEnterCoordenadas(event)">
-                <button onclick="irACoordenadasPersonalizadas()">Ir</button>
+        <!-- VENTANA MODAL PERSONALIZADA DE ALERTA DE COORDENADAS -->
+        <div id="customModalCoord" class="modal-coord-overlay">
+            <div class="modal-coord-box">
+                <div class="modal-coord-icon">⚠️</div>
+                <div class="modal-coord-title">¡ALERTA DE COORDENADAS!</div>
+                <div id="customModalCoordMsg" class="modal-coord-text">
+                    Se ha detectado un problema con las coordenadas. Por favor, verifique que los valores introducidos y el sistema de coordenadas seleccionado sean correctos.
+                </div>
+                <button class="modal-coord-btn" onclick="cerrarModalCoordenadas()">ACEPTAR</button>
             </div>
         </div>
-
-        <!-- Paneles flotantes adicionales -->
-        <div id="streetViewPanel" style="display:none;">
+        
+        <!-- Panel de Navegación 3D (Street View) -->
+        <div id="streetViewPanel">
             <div class="street-view-header">
                 <span>Navegación 3D (Street View)</span>
                 <button class="street-view-close" onclick="document.getElementById('streetViewPanel').style.display='none'">X</button>
@@ -88,34 +174,45 @@
             <iframe id="streetViewIframe" src=""></iframe>
         </div>
 
-        <div id="coordFloatingPanel" style="display:none;">
-            <div id="coordPanelHeader">
-                <span>📍 Coordenadas</span>
-                <div>
-                    <button id="minimizeCoordBtn">−</button>
-                    <button id="closeCoordBtn">&times;</button>
+<!-- Nuevo Panel Flotante para Coordenadas (Con Minimizar y Cerrar) -->
+        <div id="coordFloatingPanel" style="display:none; position:absolute; top:80px; left:20px; width:280px; background:white; z-index:2000; border-radius:8px; box-shadow:0 4px 15px rgba(0,0,0,0.3); overflow:hidden;">
+            <div id="coordPanelHeader" style="background:#2d3436; color:white; padding:10px 15px; display:flex; justify-content:space-between; align-items:center; cursor:move;">
+                <span style="font-weight:bold; font-size:13px;">📍 Coordenadas</span>
+                <div style="display:flex; gap:12px; align-items:center;">
+                    <button id="minimizeCoordBtn" title="Minimizar" style="background:none; border:none; color:inherit; font-size:18px; cursor:pointer; font-weight:bold; line-height:1;">−</button>
+                    <button id="closeCoordBtn" title="Cerrar" style="background:none; border:none; color:inherit; font-size:18px; cursor:pointer; font-weight:bold; line-height:1;">&times;</button>
                 </div>
             </div>
-            <div id="coordPanelBody"></div>
+            <div id="coordPanelBody" style="padding:15px; max-height:400px; overflow-y:auto;"></div>
         </div>
         
-        <div id="attributeFloatingPanel" style="display:none;">
-            <div id="attributePanelHeader">
-                <span>📋 Atributos del Predio</span>
-                <button id="closeAttributeBtn">&times;</button>
+
+        <!-- Panel Flotante de Atributos del Predio -->
+        <div id="attributeFloatingPanel" style="display:none; position:absolute; top:20px; left:20px; width:300px; background:white; z-index:2000; border-radius:8px; box-shadow:0 4px 15px rgba(0,0,0,0.3); overflow:hidden;">
+            <div id="attributePanelHeader" style="background:#2d3436; color:white; padding:10px 15px; display:flex; justify-content:space-between; align-items:center; cursor:move;">
+                <span style="font-weight:bold; font-size:13px;">📋 Atributos del Predio</span>
+                <button id="closeAttributeBtn" style="background:none; border:none; color:white; font-size:16px; cursor:pointer;">&times;</button>
             </div>
-            <div id="attributePanelBody"></div>
+            <div id="attributePanelBody" style="padding:15px; max-height:400px; overflow-y:auto;"></div>
         </div>
     </div>
 
     <!-- PANEL LATERAL -->
     <div class="sidebar-panel">
+        <!-- Módulo Didáctico de Gestión Catastral -->
         <div class="card-module-didactic">
             <h3>GESTIÓN CATASTRAL</h3>
-            <div class="didactic-description-row">
+            
+ <div class="didactic-description-row">
                 <p class="card-description">Búsqueda, consulta y localización de fincas en el visor.</p>
-                <button type="button" id="btnLimpiarCatastro" class="btn-limpiar-filtro" onclick="limpiarFiltroCatastro()">LIMPIAR FILTRO</button>
+                <button type="button" id="btnLimpiarCatastro" class="btn-limpiar-filtro" onclick="limpiarFiltroCatastro()">
+                    <svg class="icon-filter-clear" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"></polygon>
+                    </svg>
+                    LIMPIAR FILTRO
+                </button>
             </div>
+            
             <div class="didactic-fields-container">
                 <div class="didactic-card">
                     <div class="icon-circle" style="background-color: #ffeaa7; color: #d63031;">📁</div>
@@ -124,6 +221,7 @@
                         <input type="text" id="inputFinca" placeholder="Ej. 34646">
                     </div>
                 </div>
+
                 <div class="didactic-card">
                     <div class="icon-circle" style="background-color: #fab1a0; color: #e17055;">📄</div>
                     <div class="field-content">
@@ -131,6 +229,7 @@
                         <input type="text" id="inputTomo" placeholder="Ej. 8317">
                     </div>
                 </div>
+
                 <div class="didactic-card">
                     <div class="icon-circle" style="background-color: #ffeaa7; color: #fdcb6e;">📜</div>
                     <div class="field-content">
@@ -138,6 +237,7 @@
                         <input type="text" id="inputFolio" placeholder="Ej. 352">
                     </div>
                 </div>
+
                 <div class="didactic-card">
                     <div class="icon-circle" style="background-color: #81ecec; color: #00cec9;">🗺️</div>
                     <div class="field-content">
@@ -145,6 +245,7 @@
                         <input type="text" id="inputUbicacion" placeholder="Ej. 3001">
                     </div>
                 </div>
+
                 <div class="didactic-card">
                     <div class="icon-circle" style="background-color: #dfe6e9; color: #2d3436;">👤</div>
                     <div class="field-content">
@@ -153,19 +254,24 @@
                     </div>
                 </div>
             </div>
+
             <button class="btn-consultar-didactic" onclick="buscarCatastro()">CONSULTAR EN MAPA</button>
             <div id="alertaCatastro"></div>
         </div>
 
+        <!-- Módulo de Consulta de Planos -->
         <div class="card-planos">
             <h2>CONSULTA DE PLANOS</h2>
             <div class="instruccion">Ingrese el número de plano a consultar:</div>
+            
             <div class="search-box">
                 <input type="text" id="inputPlanoSearch" placeholder="Ej. 31-234" autocomplete="off">
                 <button onclick="buscarPlanoManual()">Buscar</button>
                 <ul id="listaSugerenciasPlanos" class="sugerencias-lista-planos" style="display:none;"></ul>
             </div>
+
             <div id="alertaPlano"></div>
+
             <div class="viewer-plano">
                 <div class="watermark-overlay"></div>
                 <span id="textoPlanoPlaceholder" class="placeholder-text">Vista previa del plano</span>
