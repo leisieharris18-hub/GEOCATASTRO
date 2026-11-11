@@ -1243,3 +1243,37 @@ body.dark-mode #attributeFloatingPanel table td {
     border-color: #12657a !important;
     color: #e8f6ff !important;
 }
+/* ==========================================================================
+   ESTILOS DE LA BARRA INFORMATIVA INFERIOR (DISCLAIMER)
+   ========================================================================== */
+.footer-disclaimer-bar {
+    background: #004d40;
+    color: #ffffff;
+    padding: 10px 20px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0.3px;
+    border-top: 2px solid #00332c;
+    box-shadow: 0 -2px 6px rgba(0, 0, 0, 0.1);
+    box-sizing: border-box;
+    width: 100%;
+}
+
+.disclaimer-icon {
+    font-size: 14px;
+    flex-shrink: 0;
+}
+
+.disclaimer-text {
+    line-height: 1.3;
+}
+
+/* Adaptación automática para el Modo Oscuro */
+body.dark-mode .footer-disclaimer-bar {
+    background: #002431 !important;
+    border-top: 2px solid #007e96 !important;
+    color: #e8f6ff !important;
+}
