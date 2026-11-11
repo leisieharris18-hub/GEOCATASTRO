@@ -303,7 +303,70 @@ header h1 {
 
 
 /* ==========================================================================
-   ETAPA 5. MÓDULO DE GESTIÓN CATASTRAL (CONSULTA DE PREDIOS Y FINCAS)
+   ETAPA 5. BOTÓN DE ADVERTENCIA (DEBAJO DE CAPAS, COMPACTO Y CUADRADO)
+   ========================================================================== */
+.aviso-legal-container {
+    position: absolute;
+    top: 75px; /* Ubicado exactamente debajo del control de capas superior derecho */
+    right: 12px;
+    z-index: 1200;
+    max-width: 280px;
+    transition: all 0.3s ease;
+}
+
+.aviso-legal-btn {
+    background: #00897b; /* Color acorde al diseño institucional */
+    color: #ffffff;
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    border-radius: 8px;
+    padding: 8px 10px;
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    cursor: pointer;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+    text-align: left;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    transition: background-color 0.2s ease, transform 0.1s ease;
+    outline: none;
+    width: 100%;
+}
+
+.aviso-legal-btn:hover {
+    background-color: #00695c;
+}
+
+.aviso-icon {
+    font-size: 16px;
+    flex-shrink: 0;
+    margin-top: 1px;
+}
+
+.aviso-texto {
+    font-size: 11px;
+    line-height: 1.35;
+    font-weight: 600;
+    color: #ffffff;
+    display: block;
+}
+
+/* Estado Minimizado: se convierte en un botón cuadrado compacto de 36x36px debajo de capas */
+.aviso-legal-container.minimizado .aviso-legal-btn {
+    width: 36px;
+    height: 36px;
+    padding: 0;
+    justify-content: center;
+    align-items: center;
+    border-radius: 6px;
+}
+
+.aviso-legal-container.minimizado .aviso-texto {
+    display: none;
+}
+
+
+/* ==========================================================================
+   ETAPA 6. MÓDULO DE GESTIÓN CATASTRAL (CONSULTA DE PREDIOS Y FINCAS)
    ========================================================================== */
 .card-module-didactic {
     background: #007667; /* Verde oscuro del fondo del módulo */
@@ -513,7 +576,7 @@ header h1 {
 
 
 /* ==========================================================================
-   ETAPA 6. MÓDULO DE CONSULTA Y VISUALIZACIÓN DE PLANOS
+   ETAPA 7. MÓDULO DE CONSULTA Y VISUALIZACIÓN DE PLANOS
    ========================================================================== */
 .card-planos {
     background: linear-gradient(135deg, var(--primary-dark), #005f5f);
@@ -542,7 +605,7 @@ header h1 {
     font-weight: 500;
 }
 
-/* 6.1. Buscador y Lista de Sugerencias de Planos */
+/* 7.1. Buscador y Lista de Sugerencias de Planos */
 .search-box { 
     display: flex; 
     gap: 8px; 
@@ -606,7 +669,7 @@ header h1 {
     font-weight: bold; 
 }
 
-/* 6.2. Visor de Imagen del Plano y Marca de Agua */
+/* 7.2. Visor de Imagen del Plano y Marca de Agua */
 .viewer-plano {
     background-color: #ffffff;
     border: 2px dashed #cbd5e1;
@@ -652,7 +715,7 @@ header h1 {
 
 
 /* ==========================================================================
-   ETAPA 7. WIDGETS Y PANELES FLOTANTES (COORDENADAS, STREET VIEW Y MARCADORES)
+   ETAPA 8. WIDGETS Y PANELES FLOTANTES (COORDENADAS, STREET VIEW Y MARCADORES)
    ========================================================================== */
 .coord-widget-container {
     position: absolute;
@@ -765,7 +828,7 @@ header h1 {
 
 
 /* ==========================================================================
-   ETAPA 8. ESTILOS DE VENTANAS EMERGENTES (POPUPS DE LEAFLET)
+   ETAPA 9. ESTILOS DE VENTANAS EMERGENTES (POPUPS DE LEAFLET)
    ========================================================================== */
 .leaflet-popup-content-wrapper {
     max-width: 280px !important;
@@ -782,7 +845,7 @@ header h1 {
 
 
 /* ==========================================================================
-   ETAPA 9. CONTROLES DE NAVEGACIÓN Y ZOOM DEL MAPA
+   ETAPA 10. CONTROLES DE NAVEGACIÓN Y ZOOM DEL MAPA
    ========================================================================== */
 .leaflet-left .leaflet-control-zoom { 
     left: auto !important; 
@@ -793,7 +856,7 @@ header h1 {
 
 
 /* ==========================================================================
-   ETAPA 10. VENTANA MODAL DE ALERTAS DE COORDENADAS
+   ETAPA 11. VENTANA MODAL DE ALERTAS DE COORDENADAS
    ========================================================================== */
 .modal-coord-overlay {
     position: absolute;
@@ -870,7 +933,7 @@ header h1 {
 
 
 /* ==========================================================================
-   ETAPA 11. MODO OSCURO COMPLETO Y UNIFICADO (COLÓN DIGITAL)
+   ETAPA 12. MODO OSCURO COMPLETO Y UNIFICADO (COLÓN DIGITAL)
    ========================================================================== */
 
 /* 1. CONFIGURACIÓN GENERAL Y VARIABLES */
@@ -951,10 +1014,7 @@ body.dark-mode .sed-welcome-text {
 }
 
 
-/* 3. MÓDULO DE GESTIÓN CATASTRAL
-   PALETA AJUSTADA A LA REFERENCIA
-   ========================================================================== */
-
+/* 3. MÓDULO DE GESTIÓN CATASTRAL (MODO OSCURO) */
 body.dark-mode .card-module-didactic {
     background: linear-gradient(
         160deg,
@@ -993,7 +1053,7 @@ body.dark-mode .field-content label {
 }
 
 body.dark-mode .field-content input {
-    background-color: transparent !important; /* Se funde completamente con el fondo de la tarjeta */
+    background-color: transparent !important;
     color: #ffffff !important;
     border: none !important; 
     outline: none !important;
@@ -1039,7 +1099,7 @@ body.dark-mode .btn-consultar-didactic:hover {
 }
 
 
-/* 4. MÓDULO CONSULTA DE PLANOS Y OTROS PANELES LATERALES */
+/* 4. MÓDULO CONSULTA DE PLANOS Y OTROS PANELES LATERALES (MODO OSCURO) */
 body.dark-mode .card-planos {
     background: linear-gradient(
         135deg,
@@ -1077,11 +1137,27 @@ body.dark-mode .sidebar-panel {
 }
 
 
-/* 5. MAPA, WIDGETS Y CONTROLES LEAFLET */
+/* 5. MAPA, WIDGETS Y CONTROLES LEAFLET (MODO OSCURO) */
 body.dark-mode #map-container {
     background: #002431 !important;
     border: 1px solid #007e96 !important;
     box-shadow: 0 4px 16px rgba(0, 0, 0, 0.45) !important;
+}
+
+/* Adaptación del Botón de Advertencia en Modo Oscuro */
+body.dark-mode .aviso-legal-btn {
+    background: #002c3c !important;
+    color: #e8f6ff !important;
+    border: 1px solid #12657a !important;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.5) !important;
+}
+
+body.dark-mode .aviso-legal-btn:hover {
+    background: #003d52 !important;
+}
+
+body.dark-mode .aviso-texto {
+    color: #e8f6ff !important;
 }
 
 body.dark-mode .coord-widget-container {
@@ -1117,7 +1193,8 @@ body.dark-mode .leaflet-popup-tip {
     color: #e8f6ff !important;
 }
 
-/* 6. SUGERENCIAS Y LISTAS DESPLEGABLES */
+
+/* 6. SUGERENCIAS Y LISTAS DESPLEGABLES (MODO OSCURO) */
 body.dark-mode .sugerencias-dropdown,
 body.dark-mode .sugerencias-lista-planos {
     background: #003143 !important;
@@ -1139,7 +1216,7 @@ body.dark-mode .sugerencias-lista-planos li:hover {
 }
 
 
-/* 7. SCROLLBARS PERSONALIZADOS */
+/* 7. SCROLLBARS PERSONALIZADOS (MODO OSCURO) */
 body.dark-mode .sidebar-panel::-webkit-scrollbar {
     width: 8px;
 }
@@ -1156,9 +1233,8 @@ body.dark-mode .sidebar-panel::-webkit-scrollbar-thumb {
 body.dark-mode .sidebar-panel::-webkit-scrollbar-thumb:hover {
     background: #00c4da;
 }
-/* ==========================================================================
-   CORRECCIÓN DE TEXTO EN VISTA DE PLANOS PARA MODO OSCURO
-   ========================================================================== */
+
+/* Correcciones de texto complementarias para Modo Oscuro */
 body.dark-mode .card-planos .instruccion,
 body.dark-mode .card-planos .placeholder-text,
 body.dark-mode .viewer-plano span,
@@ -1166,18 +1242,12 @@ body.dark-mode .viewer-plano div {
     color: #ffffff !important;
 }
 
-/* Asegurar legibilidad general dentro del panel flotante de atributos en modo oscuro */
 body.dark-mode #attributeFloatingPanel,
 body.dark-mode #attributeFloatingPanel div {
     color: #e8f6ff;
 }
 
-
-/* ==========================================================================
-   ESTILOS Y COMPATIBILIDAD DARK MODE PARA PANELES FLOTANTES
-   ========================================================================== */
-
-/* Estilos base por defecto (Modo Claro) para los paneles flotantes */
+/* Paneles flotantes en Modo Oscuro */
 #coordFloatingPanel, #attributeFloatingPanel {
     background: #ffffff;
     color: #333333;
@@ -1204,7 +1274,6 @@ body.dark-mode #attributeFloatingPanel div {
     color: #e74c3c;
 }
 
-/* Adaptación automática para el Modo Oscuro */
 body.dark-mode #coordFloatingPanel,
 body.dark-mode #attributeFloatingPanel {
     background: #002c3c !important;
@@ -1232,7 +1301,6 @@ body.dark-mode #closeAttributeBtn:hover {
     color: #ff7675 !important;
 }
 
-/* Asegurar legibilidad en las tablas internas de los paneles flotantes (modo oscuro) */
 body.dark-mode #attributeFloatingPanel table th {
     background: #003b4d !important;
     color: #ffffff !important;
