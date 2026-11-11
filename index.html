@@ -2,6 +2,9 @@
 <html lang="es">
 
 <head>
+    <!-- ==========================================================
+         ETAPA 1. CONFIGURACIÓN DEL ENCABEZADO Y METADATOS
+         ========================================================== -->
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Geoportal Catastral - Ciudad de Colón</title>
@@ -75,6 +78,9 @@
 
 <body>
 
+<!-- ==========================================================
+     ETAPA 2. ENCABEZADO PRINCIPAL Y BARRA DE BIENVENIDA
+     ========================================================== -->
 <header>
     <div class="header-top-row">
         <!-- BLOQUE IZQUIERDO -->
@@ -133,25 +139,40 @@
     </div>
 </header>
 
+<!-- ==========================================================
+     ETAPA 3. CONTENEDOR PRINCIPAL (MAPA Y PANELES)
+     ========================================================== -->
 <div class="main-container">
     <div id="map-container">
         <div id="map"></div>
 
-<!-- Widget Flotante de Coordenadas -->
-<div class="coord-widget-container">
-    <div class="coord-inputs">
-        <select id="selectTipoCoord" onchange="cambiarFormatoCoordenadas()">
-            <option value="DD">DD (Grados Decimales)</option>
-            <option value="UTM">UTM (WGS84 17N)</option>
-            <option value="DMS">GMS (Grados, Min, Seg)</option>
-        </select>
-        <span id="labelX" class="coord-label">Long:</span>
-        <input type="text" id="inputLong" placeholder="Ej. -79.90" onkeydown="verificarEnterCoordenadas(event)">
-        <span id="labelY" class="coord-label">Lat:</span>
-        <input type="text" id="inputLat" placeholder="Ej. 9.36" onkeydown="verificarEnterCoordenadas(event)">
-        <button onclick="irACoordenadasPersonalizadas()">Ir</button>
-    </div>
-</div>
+        <!-- ==========================================================
+             WIDGET DE ADVERTENCIA (UBICADO DEBAJO DEL CONTROL DE CAPAS)
+             ========================================================== -->
+        <div id="avisoLegalContainer" class="aviso-legal-container">
+            <button id="btnToggleAviso" class="aviso-legal-btn" onclick="toggleAvisoLegal()">
+                <span class="aviso-icon">ℹ️</span>
+                <span id="avisoTextoCompleto" class="aviso-texto">
+                    Este visor tiene carácter referencial. Al derivar de un levantamiento fotogramétrico, se sugiere cotejar con inscripciones y verificación en campo.
+                </span>
+            </button>
+        </div>
+
+        <!-- Widget Flotante de Coordenadas -->
+        <div class="coord-widget-container">
+            <div class="coord-inputs">
+                <select id="selectTipoCoord" onchange="cambiarFormatoCoordenadas()">
+                    <option value="DD">DD (Grados Decimales)</option>
+                    <option value="UTM">UTM (WGS84 17N)</option>
+                    <option value="DMS">GMS (Grados, Min, Seg)</option>
+                </select>
+                <span id="labelX" class="coord-label">Long:</span>
+                <input type="text" id="inputLong" placeholder="Ej. -79.90" onkeydown="verificarEnterCoordenadas(event)">
+                <span id="labelY" class="coord-label">Lat:</span>
+                <input type="text" id="inputLat" placeholder="Ej. 9.36" onkeydown="verificarEnterCoordenadas(event)">
+                <button onclick="irACoordenadasPersonalizadas()">Ir</button>
+            </div>
+        </div>
 
         <!-- VENTANA MODAL PERSONALIZADA DE ALERTA DE COORDENADAS -->
         <div id="customModalCoord" class="modal-coord-overlay">
@@ -174,7 +195,7 @@
             <iframe id="streetViewIframe" src=""></iframe>
         </div>
 
-<!-- Nuevo Panel Flotante para Coordenadas (Con Minimizar y Cerrar) -->
+        <!-- Nuevo Panel Flotante para Coordenadas (Con Minimizar y Cerrar) -->
         <div id="coordFloatingPanel" style="display:none; position:absolute; top:80px; left:20px; width:280px; background:white; z-index:2000; border-radius:8px; box-shadow:0 4px 15px rgba(0,0,0,0.3); overflow:hidden;">
             <div id="coordPanelHeader" style="background:#2d3436; color:white; padding:10px 15px; display:flex; justify-content:space-between; align-items:center; cursor:move;">
                 <span style="font-weight:bold; font-size:13px;">📍 Coordenadas</span>
@@ -185,7 +206,6 @@
             </div>
             <div id="coordPanelBody" style="padding:15px; max-height:400px; overflow-y:auto;"></div>
         </div>
-        
 
         <!-- Panel Flotante de Atributos del Predio -->
         <div id="attributeFloatingPanel" style="display:none; position:absolute; top:20px; left:20px; width:300px; background:white; z-index:2000; border-radius:8px; box-shadow:0 4px 15px rgba(0,0,0,0.3); overflow:hidden;">
@@ -197,13 +217,15 @@
         </div>
     </div>
 
-    <!-- PANEL LATERAL -->
+    <!-- ==========================================================
+         ETAPA 4. PANEL LATERAL (GESTIÓN CATASTRAL Y PLANOS)
+         ========================================================== -->
     <div class="sidebar-panel">
         <!-- Módulo Didáctico de Gestión Catastral -->
         <div class="card-module-didactic">
             <h3>GESTIÓN CATASTRAL</h3>
             
- <div class="didactic-description-row">
+            <div class="didactic-description-row">
                 <p class="card-description">Búsqueda, consulta y localización de fincas en el visor.</p>
                 <button type="button" id="btnLimpiarCatastro" class="btn-limpiar-filtro" onclick="limpiarFiltroCatastro()">
                     <svg class="icon-filter-clear" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -281,6 +303,9 @@
     </div>
 </div>
 
+<!-- ==========================================================
+     ETAPA 5. SCRIPTS Y LIBRERÍAS EXTERNAS
+     ========================================================== -->
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/proj4js/2.11.0/proj4.js"></script>
 <script src="js/map.js"></script>
